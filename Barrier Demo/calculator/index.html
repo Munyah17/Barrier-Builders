@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Fence Quote | Barrier Builders</title>
+  <meta name="description" content="Build a bill of quantities and a numbered quotation in under two minutes.">
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css?v=5">
+</head>
+<body>
+<div id="site-header"></div>
+<section class="page-hero" style="background-image:url('../assets/img/hero-farm.jpg')">
+  <div class="container">
+    <div class="crumbs"><a href="../index">Home</a> <span class="sep">›</span> Instant Quote</div>
+    <h1>Instant fence quote calculator</h1>
+    <p>Four steps. A full bill of quantities. A quotation you can print, WhatsApp, or send to accounts for conversion to an invoice.</p>
+  </div>
+</section>
+<div style="background:#fff;border-bottom:1px solid var(--border);padding:28px 0">
+  <div class="container">
+    <div class="stepper" id="stepper">
+      <div class="stepper-progress" id="bar"></div>
+      <div class="step active" data-s="1"><div class="num">1</div><div class="label"><strong>Size</strong>Perimeter</div></div>
+      <div class="step" data-s="2"><div class="num">2</div><div class="label"><strong>Type</strong>Material</div></div>
+      <div class="step" data-s="3"><div class="num">3</div><div class="label"><strong>Options</strong>Extras</div></div>
+      <div class="step" data-s="4"><div class="num">4</div><div class="label"><strong>Quote</strong>Your details</div></div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="split">
+    <div>
+      <div class="panel" id="p1">
+        <div class="panel-head"><div><h2>Project size</h2><p class="hint">Total distance around the area you want fenced.</p></div></div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field"><label>Perimeter <span class="req">*</span></label><input type="number" id="perimeter" value="180" min="1"><span class="hint">metres</span></div>
+            <div class="field"><label>Corners</label>
+              <select id="corners"><option value="0">Straight</option><option value="4" selected>4</option><option value="6">6</option><option value="8">8</option></select>
+            </div>
+            <div class="field"><label>Height</label>
+              <select id="height"><option>1.2</option><option selected>1.8</option><option>2.1</option><option>2.4</option></select>
+            </div>
+            <div class="field"><label>Post spacing</label>
+              <select id="spacing"><option value="2">2.0 m</option><option value="2.5" selected>2.5 m</option><option value="3">3.0 m</option></select>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:18px"><button class="btn btn-gold" type="button" onclick="go(2)">Next: fence type</button></div>
+        </div>
+      </div>
+      <div class="panel" id="p2" style="display:none">
+        <div class="panel-head"><div><h2>Fence type</h2><p class="hint">Prices pull from live inventory.</p></div></div>
+        <div class="panel-body">
+          <div class="type-cards" id="types"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:18px">
+            <button class="btn btn-outline" type="button" onclick="go(1)">Back</button>
+            <button class="btn btn-gold" type="button" onclick="go(3)">Next: options</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="p3" style="display:none">
+        <div class="panel-head"><div><h2>Options</h2></div></div>
+        <div class="panel-body">
+          <label class="type-card" style="display:block;text-align:left;margin-bottom:8px"><input type="checkbox" id="optTopWire" checked> Top wire (barbed / razor)</label>
+          <label class="type-card" style="display:block;text-align:left;margin-bottom:8px"><input type="checkbox" id="optGate" checked> Vehicle access gate (4 m)</label>
+          <label class="type-card" style="display:block;text-align:left;margin-bottom:8px"><input type="checkbox" id="optConcrete" checked> Concrete post bases</label>
+          <label class="type-card" style="display:block;text-align:left;margin-bottom:8px"><input type="checkbox" id="optInstall"> Include installation labour</label>
+          <div style="display:flex;justify-content:space-between;margin-top:18px">
+            <button class="btn btn-outline" type="button" onclick="go(2)">Back</button>
+            <button class="btn btn-gold" type="button" onclick="go(4)">Next: your details</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="p4" style="display:none">
+        <div class="panel-head"><div><h2>Save this quotation</h2><p class="hint">We issue a numbered quote valid for 14 days.</p></div></div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field"><label>Full name <span class="req">*</span></label><input id="custName" placeholder="Your name"></div>
+            <div class="field"><label>Phone or email <span class="req">*</span></label><input id="custContact" placeholder="0772 … or you@email.com"></div>
+          </div>
+          <div class="field" style="margin-top:12px"><label>Notes</label><textarea id="custNotes" rows="3" placeholder="Site location, access, preferred date"></textarea></div>
+          <div style="display:flex;justify-content:space-between;margin-top:18px;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-outline" type="button" onclick="go(3)">Back</button>
+            <button class="btn btn-green" type="button" id="saveQuote">Generate quotation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="panel sticky-panel">
+      <div class="live-head"><h3><span class="pulse"></span> Live bill of quantities</h3><span class="badge badge-green">USD</span></div>
+      <div class="panel-body">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
+          <div class="sum"><div class="hint">Perimeter</div><strong id="sumP">—</strong></div>
+          <div class="sum"><div class="hint">Type</div><strong id="sumT">—</strong></div>
+        </div>
+        <div id="boq"></div>
+        <div class="grand"><span>Materials</span><span class="val" id="sumSub">$0.00</span></div>
+        <p class="hint" id="sumVat"></p>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="mob-total" id="mobTotal">
+  <div><span class="hint">Materials total</span><strong id="mobTotalVal">$0.00</strong></div>
+  <button class="btn btn-gold btn-sm" id="mobTotalGo" type="button">View BOQ</button>
+</div>
+<div id="site-footer"></div>
+<script src="../js/store.js?v=8"></script>
+<script src="../js/estimator.js?v=3"></script>
+<script src="../js/ui.js?v=7"></script>
+<script>
+let step = 1;
+const preType = new URLSearchParams(location.search).get("type");
+function read() {
+  const type = (document.querySelector("input[name=ft]:checked") || {}).value || "diamond-mesh";
+  return {
+    perimeter: +perimeter.value, corners: +corners.value, height: +height.value, spacing: +spacing.value, type,
+    options: { topWire: optTopWire.checked, gate: optGate.checked, install: optInstall.checked, concrete: optConcrete.checked }
+  };
+}
+function render() {
+  const boq = BFSEst.computeBOQ(read());
+  sumP.textContent = (boq.input.perimeter || 0) + " m";
+  sumT.textContent = boq.p ? boq.p.name : "—";
+  boqEl = document.getElementById("boq");
+  document.getElementById("boq").innerHTML = boq.items.length ? boq.items.map(i =>
+    `<div class="boq-item"><span class="name">${i.name}</span><span class="qty">${i.qty}</span><strong>$${BFS.money(i.total)}</strong></div>`
+  ).join("") : '<p class="hint">Enter a perimeter to see quantities.</p>';
+  sumSub.textContent = "$" + BFS.money(boq.subtotal);
+  const vatPct = Math.round((BFS.settings().vatRate || 0.15) * 100);
+  sumVat.textContent = "VAT " + vatPct + "% on invoice: $" + BFS.money(boq.vat) + " · Gross $" + BFS.money(boq.total);
+}
+function go(n) {
+  step = n;
+  [1,2,3,4].forEach(i => document.getElementById("p"+i).style.display = i===n ? "block" : "none");
+  document.querySelectorAll(".step").forEach(s => {
+    const v = +s.dataset.s;
+    s.classList.toggle("active", v===n);
+    s.classList.toggle("done", v<n);
+  });
+  document.getElementById("bar").style.width = ((n-1)/3*84) + "%";
+  const p = document.getElementById("p" + n);
+  window.scrollTo({ top: p.getBoundingClientRect().top + window.scrollY - 84, behavior: "smooth" });
+}
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("types").innerHTML = BFSEst.fenceProducts().map((p,i) => `
+    <label class="type-card">
+      <input type="radio" name="ft" value="${p.slug}" ${(preType?preType===p.slug:i===0)?"checked":""}>
+      <div class="thumb" style="background-image:url('${BFS.asset(p.image)}')"></div>
+      <strong>${p.name}</strong>
+    </label>`).join("");
+  ["perimeter","corners","height","spacing","optTopWire","optGate","optInstall","optConcrete"].forEach(id => {
+    document.getElementById(id).addEventListener("input", render);
+    document.getElementById(id).addEventListener("change", render);
+  });
+  document.getElementById("types").addEventListener("change", render);
+  document.getElementById("saveQuote").onclick = () => {
+    const name = custName.value.trim(), contact = custContact.value.trim();
+    if (!name || !contact) { BFSUI.toast("Enter your name and a phone or email."); return; }
+    const boq = BFSEst.computeBOQ(read());
+    const q = BFSEst.persistQuote(boq, { name, contact, email: contact.includes("@") ? contact : "", notes: custNotes.value.trim() }, "calculator");
+    try { BFS.saveLead({ type:"quote", name, contact, email: contact.includes("@")?contact:"", notes: custNotes.value.trim(), quoteRef:q.ref, quoteId:q.id, items:q.items, subtotal:q.subtotal, total:q.total, project:q.project, typeName:q.project.typeName, perimeter:q.project.perimeter }); } catch(e){}
+    location.href="../quote?ref=" + encodeURIComponent(q.ref);
+  };
+  document.body.classList.add("calc-mobile");
+  const mtv = document.getElementById("mobTotalVal");
+  new MutationObserver(() => { mtv.textContent = sumSub.textContent; })
+    .observe(document.getElementById("sumSub"), { childList: true, characterData: true, subtree: true });
+  document.getElementById("mobTotalGo").onclick = () => {
+    const sp = document.querySelector(".sticky-panel");
+    if (sp) window.scrollTo({ top: sp.getBoundingClientRect().top + window.scrollY - 76, behavior: "smooth" });
+  };
+  render();
+});
+</script>
+</body>
+</html>

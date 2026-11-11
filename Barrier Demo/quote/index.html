@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quotation | Barrier Builders</title>
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css?v=5">
+</head>
+<body>
+<div id="site-header"></div>
+<section class="section">
+  <div class="container" id="wrap">
+    <p class="hint">Loading quotation…</p>
+  </div>
+</section>
+<div id="site-footer"></div>
+<script src="../js/store.js?v=8"></script>
+<script src="../js/ui.js?v=7"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const ref = new URLSearchParams(location.search).get("ref");
+  const q = BFS.quote(ref);
+  const s = BFS.settings();
+  if (!q) { wrap.innerHTML = '<div class="doc"><h2>Quote not found</h2><p>Check the reference or generate a new one from the calculator.</p><a class="btn btn-gold" href="../calculator">Open calculator</a></div>'; return; }
+  document.title = q.ref + " | Barrier Builders";
+  const rows = q.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td class="right">$${BFS.money(i.unitPrice||0)}</td><td class="right">$${BFS.money(i.total)}</td></tr>`).join("");
+  wrap.innerHTML = `
+    <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;justify-content:center">
+      <button class="btn btn-gold" onclick="print()">Print / PDF</button>
+      <a class="btn btn-outline" href="https://wa.me/${s.whatsapp}?text=${encodeURIComponent("Please review quotation "+q.ref+" total $"+BFS.money(q.total))}">WhatsApp this quote</a>
+    </div>
+    <article class="doc">
+      <div class="doc-top">
+        <div>
+          <img src="../assets/logo.png" alt="" width="44" height="44">
+          <h2 style="margin-top:8px">${s.company}</h2>
+          <p class="hint">${s.address}<br>${s.phone} · ${s.email}</p>
+        </div>
+        <div style="text-align:right">
+          <div class="badge badge-gold">Quotation</div>
+          <h3 style="margin-top:8px">${q.ref}</h3>
+          <p class="hint">${new Date(q.createdAt).toLocaleDateString()} · Valid ${s.quoteValidityDays} days<br>Status: ${q.status}</p>
+        </div>
+      </div>
+      <p><strong>To:</strong> ${q.customer.name} · ${q.customer.contact}<br>
+      <strong>Project:</strong> ${q.project.typeName} · ${q.project.perimeter} m · ${q.project.height} m high</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Item</th><th>Qty</th><th class="right">Unit</th><th class="right">Amount</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div class="doc-totals">
+        <div><span>Subtotal</span><span>$${BFS.money(q.subtotal)}</span></div>
+        <div><span>VAT ${q.subtotal ? Math.round(q.vat / q.subtotal * 100) : Math.round(s.vatRate*100)}%</span><span>$${BFS.money(q.vat)}</span></div>
+        <div class="big"><span>Total</span><span>$${BFS.money(q.total)}</span></div>
+      </div>
+      <div class="terms" style="margin-top:24px;border-top:1px solid #e6efe9;padding-top:14px;font-size:12px;color:#4F6E61;line-height:1.7">
+        <strong style="display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#007243;margin-bottom:6px">Terms &amp; Conditions</strong>
+        <div id="quoteTerms">${(BFS.content().rules || {}).quote || "Prices in USD. This is a quotation, not a tax invoice. Convert to invoice from the admin portal — one click — once the client accepts."}</div>
+      </div>
+    </article>`;
+});
+</script>
+</body>
+</html>

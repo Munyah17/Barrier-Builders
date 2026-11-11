@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="generator" content="CoolAdmin 3.5.0">
+  <title>Admin | Barrier Builders</title>
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link href="css/font-face.css" rel="stylesheet" media="all">
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link href="vendor/fontawesome-7.3.1/css/all.min.css" rel="stylesheet" media="all">
+  <link href="vendor/bootstrap-5.3.8.min.css" rel="stylesheet" media="all">
+  <link href="vendor/css-hamburgers/hamburgers.min.css" rel="stylesheet" media="all">
+  <link href="css/theme.css?v=4" rel="stylesheet" media="all">
+  <link href="css/app.css?v=4" rel="stylesheet" media="all">
+  <link href="../css/admin.css?v=3" rel="stylesheet" media="all">
+</head>
+<body class="app">
+  <div class="page-wrapper" id="wrapper">
+    <header class="header-mobile d-block d-lg-none">
+      <div class="header-mobile__bar">
+        <div class="container-fluid">
+          <div class="header-mobile-inner">
+            <a class="logo" href="#/dashboard"><img src="../assets/favicon.png" alt="Barrier Builders" style="width:34px;height:34px;border-radius:8px"> <strong style="color:#fff;margin-left:8px">Barrier Admin</strong></a>
+            <button class="hamburger hamburger--slider" type="button" aria-label="Toggle navigation"><span class="hamburger-box"><span class="hamburger-inner"></span></span></button>
+          </div>
+        </div>
+      </div>
+      <nav class="navbar-mobile">
+        <div class="container-fluid">
+          <ul class="navbar-mobile__list list-unstyled">
+            <li><a href="#/dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</a></li>
+            <li><a href="#/analytics"><i class="fa-solid fa-chart-line"></i>Analytics</a></li>
+            <li><a href="#/quotes"><i class="fa-solid fa-file-invoice-dollar"></i>Quotations</a></li>
+            <li><a href="#/invoices"><i class="fa-solid fa-file-invoice"></i>Invoices</a></li>
+            <li><a href="#/orders"><i class="fa-solid fa-truck-fast"></i>Orders</a></li>
+            <li><a href="#/products"><i class="fa-solid fa-boxes-stacked"></i>Inventory</a></li>
+            <li><a href="#/promotions"><i class="fa-solid fa-tags"></i>Promotions</a></li>
+            <li><a href="#/gallery"><i class="fa-solid fa-images"></i>Gallery</a></li>
+            <li><a href="#/content"><i class="fa-solid fa-pen-to-square"></i>Content</a></li>
+            <li><a href="#/messages"><i class="fa-solid fa-envelope"></i>Messages</a></li>
+            <li><a href="#/clients"><i class="fa-solid fa-users"></i>Clients</a></li>
+            <li><a href="#/admins"><i class="fa-solid fa-user-shield"></i>Admins</a></li>
+            <li><a href="#/settings"><i class="fa-solid fa-gear"></i>Settings</a></li>
+            <li><a href="#/profile"><i class="fa-solid fa-circle-user"></i>Profile</a></li>
+            <li><a href="../" target="_blank"><i class="fa-solid fa-globe"></i>View website</a></li>
+            <li><a href="#" id="logoutMobile"><i class="fa-solid fa-power-off"></i>Sign out</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+    <aside class="menu-sidebar" id="main-sidebar">
+      <div class="logo">
+        <a class="logo-link" href="#/dashboard" aria-label="Barrier Admin home">
+          <img src="../assets/favicon.png" alt="" style="width:34px;height:34px;border-radius:8px">
+          <span class="logo-text" style="margin-left:10px">Barrier <small style="display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.7">Fencing Admin</small></span>
+        </a>
+        <button class="sidebar-close js-sidebar-toggle" type="button" aria-label="Close navigation"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
+      <div class="menu-sidebar__content js-scrollbar1">
+        <nav class="navbar-sidebar">
+          <ul class="list-unstyled navbar__list">
+            <li class="has-sub">
+              <a class="js-arrow" href="#"><i class="fa-solid fa-gauge-high"></i>Overview</a>
+              <ul class="list-unstyled navbar__sub-list js-sub-list">
+                <li><a href="#/dashboard" data-nav="dashboard">Dashboard</a></li>
+                <li><a href="#/analytics" data-nav="analytics">Analytics</a></li>
+              </ul>
+            </li>
+            <li class="has-sub">
+              <a class="js-arrow" href="#"><i class="fa-solid fa-file-invoice-dollar"></i>Sales</a>
+              <ul class="list-unstyled navbar__sub-list js-sub-list">
+                <li><a href="#/quotes" data-nav="quotes">Quotations</a></li>
+                <li><a href="#/invoices" data-nav="invoices">Invoices</a></li>
+                <li><a href="#/orders" data-nav="orders">Orders</a></li>
+              </ul>
+            </li>
+            <li class="has-sub">
+              <a class="js-arrow" href="#"><i class="fa-solid fa-boxes-stacked"></i>Catalog</a>
+              <ul class="list-unstyled navbar__sub-list js-sub-list">
+                <li><a href="#/products" data-nav="products">Inventory</a></li>
+                <li><a href="#/promotions" data-nav="promotions">Promotions</a></li>
+                <li><a href="#/gallery" data-nav="gallery">Gallery</a></li>
+                <li><a href="#/content" data-nav="content">Content</a></li>
+              </ul>
+            </li>
+            <li><a href="#/messages" data-nav="messages"><i class="fa-solid fa-envelope"></i>Messages</a></li>
+            <li><a href="#/clients" data-nav="clients"><i class="fa-solid fa-users"></i>Clients</a></li>
+            <li><a href="#/admins" data-nav="admins"><i class="fa-solid fa-user-shield"></i>Admins</a></li>
+            <li><a href="#/settings" data-nav="settings"><i class="fa-solid fa-gear"></i>Settings</a></li>
+            <li><a href="#/profile" data-nav="profile"><i class="fa-solid fa-circle-user"></i>Profile</a></li>
+          </ul>
+          <ul class="list-unstyled navbar__list" style="margin-top:18px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">
+            <li><a href="../" target="_blank"><i class="fa-solid fa-globe"></i>View website</a></li>
+            <li><a href="#" id="logoutSide"><i class="fa-solid fa-power-off"></i>Sign out</a></li>
+          </ul>
+        </nav>
+      </div>
+    </aside>
+    <div class="page-container">
+      <header class="header-desktop">
+        <div class="section__content section__content--p30">
+          <div class="container-fluid">
+            <div class="header-wrap">
+              <button class="sidebar-toggle js-sidebar-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="main-sidebar"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+              <div style="flex:1"></div>
+              <div class="header-button">
+                <div class="account-wrap">
+                  <div class="account-item clearfix js-item-menu" role="button" tabindex="0" aria-haspopup="true" aria-label="Account menu">
+                    <div class="image"><img src="images/icon/avatar-01.jpg" alt="Admin"></div>
+                    <div class="content"><a class="js-acc-btn" href="#">Yard Admin</a></div>
+                    <div class="account-dropdown js-dropdown">
+                      <div class="info clearfix">
+                        <div class="image"><a href="#/settings"><img src="images/icon/avatar-01.jpg" alt="Admin"></a></div>
+                        <div class="content">
+                          <h5 class="name"><a href="#/settings">Yard Admin</a></h5><span class="email">Barrier Builders</span>
+                        </div>
+                      </div>
+                      <div class="account-dropdown__body">
+                        <div class="account-dropdown__item"><a href="#/profile"><i class="fa-solid fa-circle-user"></i>Profile</a></div>
+                        <div class="account-dropdown__item"><a href="../" target="_blank"><i class="fa-solid fa-globe"></i>View website</a></div>
+                        <div class="account-dropdown__item"><a href="#/settings"><i class="fa-solid fa-gear"></i>Settings</a></div>
+                      </div>
+                      <div class="account-dropdown__footer"><a href="#" id="logout"><i class="fa-solid fa-power-off"></i>Logout</a></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main class="main-content" id="main-content">
+        <div class="section__content section__content--p30">
+          <div class="container-fluid">
+            <div id="app"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div id="login-root"></div>
+  <script src="../js/store.js?v=8"></script>
+  <script src="../js/estimator.js?v=3"></script>
+  <script src="js/admin-utils.js?v=3"></script>
+  <script src="js/vanilla-utils.js?v=3"></script>
+  <script src="vendor/bootstrap-5.3.8.bundle.min.js"></script>
+  <script src="js/bootstrap5-init.js?v=3"></script>
+  <script src="js/main-vanilla.js?v=4"></script>
+  <script src="vendor/chartjs/chart.umd.js-4.5.1.min.js"></script>
+<script src="js/admin-app.js?v=13"></script>
+</body>
+</html>
