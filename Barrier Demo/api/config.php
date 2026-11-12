@@ -1,9 +1,9 @@
 <?php
-// Barrier Builders — DB config (XAMPP defaults: root / no password)
+// Barrier Builders — DB config (cPanel)
 define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'barrier_fencing');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_NAME', 'barrierco_db');
+define('DB_USER', 'barrierco_munyah');
+define('DB_PASS', 'griezmann17');
 
 // Groq AI (server-side only — never exposed to the browser)
 define('GROQ_API_KEY', 'gsk_COMAwbXreLsiNv9umJZXWGdyb3Y2aPyoaRhLPBbYrjoOjJG4fVl');
