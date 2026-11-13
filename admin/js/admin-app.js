@@ -3,6 +3,17 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const route = () => (location.hash.replace(/^#\/?/, "") || "dashboard").split("/");
 const EXPORTS = {};
 
+// Await DB confirmation for the most recent save. Returns false (and alerts)
+// when the server rejected it — callers should keep the form open.
+async function awaitSync() {
+  const r = await (BFS.syncNow ? BFS.syncNow() : Promise.resolve({ ok: true }));
+  if (!r || r.ok === false) {
+    alert("Save failed" + (r && r.status ? " (HTTP " + r.status + ")" : "") + " — the change was NOT stored. Check your connection and try again.");
+    return false;
+  }
+  return true;
+}
+
 function requireAuth() {
   if (!BFS.isAuthed()) { renderLogin(); return false; }
   return true;
@@ -825,6 +836,7 @@ function openClient(c) {
         await BFS.registerClient({ name: fd.get("name"), email: fd.get("email"), phone: fd.get("phone"), password: fd.get("password") });
         const nc = BFS.clientByEmail(fd.get("email")); if (nc) { nc.active = form.querySelector('[name="active"]').checked; BFS.saveClient(nc); }
       }
+      if (!(await awaitSync())) return;
       render();
     } catch (err) { alert(err.message); }
   };
@@ -886,15 +898,18 @@ if (!window.__bfsAdminDeleteBound) {
     }
     const label = admin ? (admin.name || admin.username || admin.email || "this admin") : "this admin";
     if (!confirm("Delete " + label + "? They will no longer be able to sign in.")) return;
-    try {
-      const me = window.BFS_SESSION;
-      BFS.deleteAdmin(id);
-      if (me && String(me.id) === String(id)) {
-        location.href = "../api/data.php?logout=1";
-        return;
-      }
-      render();
-    } catch (err) { alert(err.message); }
+    (async () => {
+      try {
+        const me = window.BFS_SESSION;
+        BFS.deleteAdmin(id);
+        if (!(await awaitSync())) return;
+        if (me && String(me.id) === String(id)) {
+          location.href = "../api/data.php?logout=1";
+          return;
+        }
+        render();
+      } catch (err) { alert(err.message); }
+    })();
   }, true);
 }
 function openAdmin(a) {
@@ -904,20 +919,27 @@ function openAdmin(a) {
   const cancelBtn = box.querySelector("#cancel");
   const form = box.querySelector("#af2");
   if (cancelBtn) cancelBtn.onclick = () => { box.innerHTML = ""; };
-  if (form) form.onsubmit = e => {
+  if (form) form.onsubmit = async e => {
     e.preventDefault();
     const fd = new FormData(form);
     const un = fd.get("username").trim();
     if (BFS.admins().some(x => x.id !== (a&&a.id) && (x.username||"").toLowerCase() === un.toLowerCase())) { alert("That username is taken."); return; }
     const activeChecked = form.querySelector('[name="active"]').checked;
-    if (a) {
-      a.username = un; a.email = fd.get("email").trim(); a.active = activeChecked;
-      if (fd.get("password")) a.password = btoa(unescape(encodeURIComponent(fd.get("password"))));
-      BFS.saveAdmin(a);
-    } else {
-      BFS.saveAdmin({ username: un, email: fd.get("email").trim(), password: btoa(unescape(encodeURIComponent(fd.get("password")))), active: activeChecked });
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+      if (a) {
+        a.username = un; a.email = fd.get("email").trim(); a.active = activeChecked;
+        if (fd.get("password")) a.password = btoa(unescape(encodeURIComponent(fd.get("password"))));
+        BFS.saveAdmin(a);
+      } else {
+        BFS.saveAdmin({ username: un, email: fd.get("email").trim(), password: btoa(unescape(encodeURIComponent(fd.get("password") || ""))), active: activeChecked });
+      }
+      if (!(await awaitSync())) return; // keep the form open on failure
+      render();
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
     }
-    render();
   };
 }
 
@@ -982,7 +1004,7 @@ function bindProfile() {
     reader.readAsDataURL(file);
   };
   const form = document.getElementById("pf2");
-  if (form) form.onsubmit = e => {
+  if (form) form.onsubmit = async e => {
     e.preventDefault();
     const fd = new FormData(form);
     const me = BFS.adminAuthed(); if (!me) return;
@@ -995,6 +1017,7 @@ function bindProfile() {
     if (avatarData) me.avatar = avatarData;
     if (fd.get("password")) me.password = btoa(unescape(encodeURIComponent(fd.get("password"))));
     BFS.saveAdmin(me);
+    if (!(await awaitSync())) return;
     const auth = JSON.parse(sessionStorage.getItem("bfs_auth") || "null");
     if (auth) { auth.user = me.username; sessionStorage.setItem("bfs_auth", JSON.stringify(auth)); }
     alert("Profile saved."); render();

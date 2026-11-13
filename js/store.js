@@ -36,6 +36,8 @@
 
   let saveInFlight = 0;
 
+  let lastSync = Promise.resolve({ ok: true, status: 200, skipped: true });
+
   function pushToServer(state) {
     saveInFlight++;
     const headers = { "Content-Type": "application/json" };
@@ -43,7 +45,7 @@
       const me = global.BFS_SESSION;
       if (me && me.user) headers["X-BFS-Admin"] = "1";
     } catch (e) {}
-    return fetch(API_URL, {
+    lastSync = fetch(API_URL, {
       method: "POST",
       headers,
       credentials: "same-origin",
@@ -55,10 +57,12 @@
       } else if (!res.ok) {
         try { window.dispatchEvent(new CustomEvent("bfs-save-failed", { detail: { status: res.status } })); } catch (e) {}
       }
-      return res;
+      return { ok: res.ok, status: res.status };
     }).catch(() => {
       try { window.dispatchEvent(new Event("bfs-save-failed")); } catch (e) {}
+      return { ok: false, status: 0 };
     }).finally(() => { saveInFlight--; });
+    return lastSync;
   }
 
   const SEED = {
@@ -721,6 +725,9 @@
       return !!(me && me.user);
     },
     reset() { localStorage.removeItem(KEY); state = load(); },
+    // resolves with { ok, status } for the most recent server sync —
+    // await this after a save when you need DB confirmation
+    syncNow() { return lastSync; },
     export() { return JSON.stringify(state, null, 2); },
     import(json) { state = JSON.parse(json); save(state); },
     money, vatOn, uid, nextRef, isOwnerAdmin, adminLabel,
