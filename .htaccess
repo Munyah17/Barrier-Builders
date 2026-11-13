@@ -1,4 +1,4 @@
-DirectoryIndex index.html
+DirectoryIndex index.php index.html
 Options -Indexes
 
 # Clean URLs: strip .html extension
