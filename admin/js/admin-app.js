@@ -1115,10 +1115,9 @@ function settings() {
     </div>
     <button class="m-btn m-btn--primary mt-3" type="submit">Save settings</button>
   </form></section>
-  <section class="m-card"><header class="m-card__header"><div><h2 class="m-card__title">Data</h2><p class="m-card__subtitle">Everything lives in this browser until you export.</p></div></header>
+  <section class="m-card"><header class="m-card__header"><div><h2 class="m-card__title">Data</h2><p class="m-card__subtitle">All site data is stored on the server database. Export a backup anytime.</p></div></header>
     <div class="d-flex gap-2 flex-wrap">
-      <button class="m-btn m-btn--ghost" id="exp">Export JSON</button>
-      <button class="btn btn-danger" id="rst">Reset demo data</button>
+      <button class="m-btn m-btn--ghost" id="exp">Export backup (JSON)</button>
     </div>
   </section>`);
 }
@@ -1585,7 +1584,7 @@ function render() {
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "barrier-fencing-data.json"; a.click();
     };
     const rstEl = document.getElementById("rst");
-    if (rstEl) rstEl.onclick = () => { if (confirm("Reset all local data to the demo seed?")) { BFS.reset(); render(); } };
+    if (rstEl) rstEl.onclick = () => { alert("Data reset is disabled — site data lives on the server. Contact support for a restore."); };
   }
   if (r === "profile") bindProfile();
   initCharts();

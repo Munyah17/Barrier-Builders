@@ -202,6 +202,6 @@ $bfsSession = $me ? [
   <script src="js/bootstrap5-init.js?v=3"></script>
   <script src="js/main-vanilla.js?v=4"></script>
   <script src="vendor/chartjs/chart.umd.js-4.5.1.min.js"></script>
-<script src="js/admin-app.js?v=21"></script>
+<script src="js/admin-app.js?v=22"></script>
 </body>
 </html>
