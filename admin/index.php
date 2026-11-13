@@ -49,7 +49,7 @@ $bfsSession = $me ? [
   <link href="vendor/css-hamburgers/hamburgers.min.css" rel="stylesheet" media="all">
   <link href="css/theme.css?v=4" rel="stylesheet" media="all">
   <link href="css/app.css?v=4" rel="stylesheet" media="all">
-  <link href="../css/admin.css?v=3" rel="stylesheet" media="all">
+  <link href="../css/admin.css?v=4" rel="stylesheet" media="all">
 </head>
 <body class="app">
   <div class="page-wrapper" id="wrapper">
@@ -192,14 +192,14 @@ $bfsSession = $me ? [
       </form>
     </div>
   </div>
-  <script src="../js/store.js?v=13"></script>
-  <script src="../js/estimator.js?v=3"></script>
+  <script src="../js/store.js?v=14"></script>
+  <script src="../js/estimator.js?v=4"></script>
   <script src="js/admin-utils.js?v=3"></script>
   <script src="js/vanilla-utils.js?v=3"></script>
   <script src="vendor/bootstrap-5.3.8.bundle.min.js"></script>
   <script src="js/bootstrap5-init.js?v=3"></script>
   <script src="js/main-vanilla.js?v=4"></script>
   <script src="vendor/chartjs/chart.umd.js-4.5.1.min.js"></script>
-<script src="js/admin-app.js?v=19"></script>
+<script src="js/admin-app.js?v=20"></script>
 </body>
 </html>

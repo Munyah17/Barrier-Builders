@@ -5,10 +5,10 @@
 -- Legacy single-blob table `bfs_state` is left untouched — api/migrate.php
 -- distributes it into these tables once.
 
-CREATE DATABASE IF NOT EXISTS barrierco_db
+CREATE DATABASE IF NOT EXISTS barrierco_newdb
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE barrierco_db;
+USE barrierco_newdb;
 
 -- Site settings (admin-editable company details). Values are JSON-encoded.
 CREATE TABLE IF NOT EXISTS bfs_settings (
