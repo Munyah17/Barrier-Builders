@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice | Barrier Builders</title>
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css?v=5">
+  <style>
+    .taxinv{max-width:820px;margin:0 auto;background:#fff;border:1px solid #d8e2dc;border-radius:12px;padding:40px 44px;color:#1a2b22;font-size:14px}
+    .taxinv h1{font-family:Fraunces,serif;font-size:30px;letter-spacing:.02em;margin:0 0 14px}
+    .taxinv .meta{font-size:13px;line-height:1.7}
+    .taxinv .meta strong{color:#007243}
+    .taxinv .top{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;border-bottom:2px solid #007243;padding-bottom:18px;margin-bottom:22px}
+    .taxinv .co{font-size:13px;line-height:1.7}
+    .taxinv .co strong{font-size:16px;color:#002E1B}
+    .billto{border:1px solid #d8e2dc;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;line-height:1.7}
+    .billto strong{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#007243;margin-bottom:4px}
+    .taxinv table{width:100%;border-collapse:collapse;margin:6px 0 18px}
+    .taxinv th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#4F6E61;padding:8px 6px;border-bottom:2px solid #007243}
+    .taxinv th.r,.taxinv td.r{text-align:right}
+    .taxinv td{padding:9px 6px;border-bottom:1px solid #e6efe9;font-size:13.5px}
+    .taxinv .totals{margin-left:auto;width:min(280px,100%)}
+    .taxinv .totals div{display:flex;justify-content:space-between;padding:5px 0;font-size:13.5px}
+    .taxinv .totals .grand{border-top:2px solid #002E1B;margin-top:6px;padding-top:10px;font-size:18px;font-weight:700}
+    .taxinv .totals .grand span:last-child{font-family:Fraunces,serif;color:#007243}
+    .bank{margin-top:22px;border-top:1px dashed #d8e2dc;padding-top:14px;font-size:12.5px;line-height:1.7;color:#3c5347}
+    .bank strong{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#007243;margin-bottom:4px}
+    .sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:44px}
+    .sig{border-top:1px solid #9fb8aa;padding-top:8px;font-size:12px;color:#4F6E61;text-align:center}
+    .taxinv .foot{margin-top:34px;padding-top:12px;border-top:1px solid #e6efe9;font-size:11.5px;color:#7a8f84;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    @media print{
+      .no-print,.site-header,.site-footer,.wa-float{display:none !important}
+      body{background:#fff}
+      .taxinv{border:none;border-radius:0;max-width:none;padding:0}
+      .section{padding:0}
+    }
+    @media(max-width:640px){.taxinv{padding:24px 18px}.sigs{gap:20px}}
+  </style>
+</head>
+<body>
+<div id="site-header"></div>
+<section class="section"><div class="container" id="wrap"></div></section>
+<div id="site-footer"></div>
+<script src="../js/store.js?v=12"></script>
+<script src="../js/ui.js?v=7"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const ref = new URLSearchParams(location.search).get("ref");
+  const inv = BFS.invoice(ref);
+  const s = BFS.settings();
+  if (!inv) { wrap.innerHTML = '<div class="doc"><h2>Invoice not found</h2></div>'; return; }
+  document.title = inv.ref + " | Tax Invoice";
+  const money = n => "$" + BFS.money(n);
+  const qtyNum = q => { const m = String(q||"").match(/[\d.]+/); const n = m ? parseFloat(m[0]) : 1; return n > 0 ? n : 1; };
+  const rows = inv.items.map(i => {
+    const qn = qtyNum(i.qty);
+    const unit = i.unitPrice != null ? i.unitPrice : (qn ? i.total / qn : i.total);
+    return `<tr><td>${i.name}</td><td>${i.qty}</td><td class="r">${money(unit)}</td><td class="r">—</td><td class="r">${money(i.total)}</td></tr>`;
+  }).join("");
+  wrap.innerHTML = `
+    <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;justify-content:center">
+      <button class="btn btn-gold" onclick="print()">Print / PDF</button>
+      ${inv.tracking ? `<a class="btn btn-outline" href="../track?code=${inv.tracking}">Track order ${inv.tracking}</a>` : ""}
+    </div>
+    <article class="taxinv">
+      <div class="top">
+        <div>
+          <h1>TAX INVOICE</h1>
+          <div class="meta">
+            <div><strong>No:</strong> ${inv.ref}</div>
+            <div><strong>Date:</strong> ${new Date(inv.createdAt).toLocaleDateString("en-GB")}</div>
+            <div><strong>Due:</strong> ${new Date(inv.dueAt).toLocaleDateString("en-GB")}</div>
+            <div><strong>Status:</strong> ${inv.status.toUpperCase()}</div>
+            ${inv.quoteRef ? `<div><strong>Quote:</strong> ${inv.quoteRef}</div>` : ""}
+          </div>
+        </div>
+        <div class="co">
+          <strong>${s.company}</strong><br>
+          ${s.address}<br>
+          ${s.phone}<br>
+          TIN: ${s.tin || s.vatNumber || "—"}<br>
+          VAT Reg: ${s.vatNumber || "—"}
+        </div>
+      </div>
+      <div class="billto">
+        <strong>Bill to</strong>
+        ${inv.customer.name}<br>
+        ${inv.customer.contact ? inv.customer.contact + "<br>" : ""}
+        ${inv.customer.email ? inv.customer.email + "<br>" : ""}
+        ${inv.customer.notes ? inv.customer.notes : ""}
+      </div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Description</th><th>Qty</th><th class="r">Unit Price</th><th class="r">Discount</th><th class="r">Total</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div class="totals">
+        <div><span>Subtotal (ex VAT)</span><span>${money(inv.subtotal)}</span></div>
+        <div><span>VAT ${Math.round((s.vatRate||0.15)*100)}%</span><span>${money(inv.vat)}</span></div>
+        <div class="grand"><span>TOTAL</span><span>${money(inv.total)}</span></div>
+      </div>
+      <div class="bank">
+        <strong>Banking details</strong>
+        ${s.bank || ""}
+      </div>
+      <div class="terms" style="margin-top:18px;border-top:1px dashed #d8e2dc;padding-top:14px;font-size:12px;color:#3c5347;line-height:1.7">
+        <strong style="display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#007243;margin-bottom:6px">Terms &amp; Conditions</strong>
+        <div>${(BFS.content().rules || {}).invoice || "Payment is due within 14 days of invoice date unless otherwise agreed."}</div>
+      </div>
+      <div class="sigs">
+        <div class="sig">Prepared By</div>
+        <div class="sig">Approved By</div>
+      </div>
+      <div class="foot">
+        <span>${s.company} · ${s.address} · ${s.phone}</span>
+        <span>Page 1 of 1</span>
+      </div>
+    </article>`;
+});
+</script>
+</body>
+</html>

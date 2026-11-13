@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact | Barrier Builders</title>
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css?v=5">
+</head>
+<body>
+<div id="site-header"></div>
+<section class="page-hero" id="contactHero" style="background-image:url('../assets/img/gate.jpg')">
+  <div class="container">
+    <div class="crumbs"><a href="../index">Home</a> <span class="sep">›</span> Contact</div>
+    <h1 id="contactHeroTitle">Talk to the yard</h1>
+    <p id="contactHeroSub">WhatsApp, call, or send a message. Phone and address are editable in admin settings.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container split">
+    <form class="panel" id="form">
+      <div class="panel-head"><div><h2>Send a message</h2></div></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="field"><label>Name</label><input id="fullName" name="fullName" autocomplete="name" required></div>
+          <div class="field"><label>Phone / email</label><input id="reach" name="reach" required></div>
+        </div>
+        <div class="field" style="margin-top:12px"><label>Message</label><textarea id="msg" name="message" rows="5" required></textarea></div>
+        <button class="btn btn-gold" style="margin-top:16px" type="submit">Send</button>
+      </div>
+    </form>
+    <aside class="panel" id="info"></aside>
+  </div>
+</section>
+<div id="site-footer"></div>
+<script src="../js/store.js?v=12"></script>
+<script src="../js/ui.js?v=7"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const ct = BFS.content().contact || {};
+  if (ct.heroImage) document.getElementById("contactHero").style.backgroundImage = `url('${BFS.asset(ct.heroImage)}')`;
+  if (ct.heroTitle) document.getElementById("contactHeroTitle").textContent = ct.heroTitle;
+  if (ct.heroSub) document.getElementById("contactHeroSub").textContent = ct.heroSub;
+  const s = BFS.settings();
+  const formEl = document.getElementById("form");
+  const infoEl = document.getElementById("info");
+  const nameEl = document.getElementById("fullName");
+  const reachEl = document.getElementById("reach");
+  const msgEl = document.getElementById("msg");
+  infoEl.innerHTML = `<div class="panel-body">
+    <h2>Visit</h2>
+    <p style="margin:10px 0">${s.address}</p>
+    <p><a href="tel:${s.phone.replace(/\s/g,"")}">${s.phone}</a><br>
+    <a href="mailto:${s.email}">${s.email}</a></p>
+    <p class="hint">${s.hours}</p>
+    <a class="btn btn-green" href="https://wa.me/${s.whatsapp}" target="_blank">WhatsApp</a>
+  </div>`;
+  formEl.onsubmit = e => {
+    e.preventDefault();
+    BFS.saveContact({ name: nameEl.value.trim(), contact: reachEl.value.trim(), message: msgEl.value.trim() });
+    BFSUI.toast("Message saved. We will get back to you.");
+    formEl.reset();
+  };
+});
+</script>
+</body>
+</html>

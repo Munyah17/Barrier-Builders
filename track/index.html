@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Order | Barrier Builders</title>
+  <meta name="description" content="Track a Barrier Builders order with your tracking code, invoice or quotation number.">
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css?v=5">
+</head>
+<body>
+<div id="site-header"></div>
+<section class="page-hero" style="background-image:url('../assets/img/posts.jpg')">
+  <div class="container">
+    <div class="crumbs"><a href="../index">Home</a> <span class="sep">›</span> Track</div>
+    <h1>Track your order</h1>
+    <p>Enter a tracking code, invoice number or quotation reference.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="track-card">
+      <div class="track-form">
+        <div class="field"><label>Reference</label><input id="code" placeholder="BFS-TRK-88421"></div>
+        <button class="btn btn-gold" id="go">Track</button>
+      </div>
+      <p class="hint" style="margin-top:8px">Try the sample order <button class="chip" id="sample" type="button">BFS-TRK-88421</button></p>
+      <div id="out"></div>
+    </div>
+  </div>
+</section>
+<div id="site-footer"></div>
+<script src="../js/store.js?v=12"></script>
+<script src="../js/ui.js?v=7"></script>
+<script>
+function show(code) {
+  const o = BFS.order(code.trim());
+  if (!o) { out.innerHTML = '<p class="hint" style="margin-top:18px">No order matches that reference.</p>'; return; }
+  out.innerHTML = `
+    <div style="margin-top:22px">
+      <div class="badge badge-green">${o.status}</div>
+      <h2 style="margin:8px 0">${o.tracking}</h2>
+      <p class="hint">${o.customer.name} · Quote ${o.quoteRef} · Invoice ${o.invoiceRef}</p>
+      <div class="timeline">
+        ${o.steps.map(s => `
+          <div class="tl-item ${s.done?"done":""} ${o.status===s.key?"current":""}">
+            <div class="tl-dot"></div>
+            <div>
+              <strong>${s.label}</strong>
+              <div class="hint">${s.at ? new Date(s.at).toLocaleString() : "Pending"}</div>
+            </div>
+          </div>`).join("")}
+      </div>
+      ${o.notes ? `<p class="hint">${o.notes}</p>` : ""}
+    </div>`;
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const preset = new URLSearchParams(location.search).get("code");
+  if (preset) { code.value = preset; show(preset); }
+  go.onclick = () => show(code.value);
+  sample.onclick = () => { code.value = "BFS-TRK-88421"; show(code.value); };
+  code.addEventListener("keydown", e => { if (e.key === "Enter") show(code.value); });
+});
+</script>
+</body>
+</html>

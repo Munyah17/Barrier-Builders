@@ -1,0 +1,9 @@
+.DS_Store
+Thumbs.db
+verify-*.png
+.playwright-mcp/
+data/*.json
+
+node_modules/
+Barrier Demo*/
+*.zip
