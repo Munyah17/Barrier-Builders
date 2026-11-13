@@ -38,13 +38,27 @@
 
   function pushToServer(state) {
     saveInFlight++;
-    fetch(API_URL, {
+    const headers = { "Content-Type": "application/json" };
+    try {
+      const me = global.BFS_SESSION;
+      if (me && me.user) headers["X-BFS-Admin"] = "1";
+    } catch (e) {}
+    return fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       credentials: "same-origin",
       body: JSON.stringify(state),
       keepalive: true
-    }).catch(() => {}).finally(() => { saveInFlight--; });
+    }).then(res => {
+      if (res.status === 401) {
+        try { window.dispatchEvent(new Event("bfs-session-expired")); } catch (e) {}
+      } else if (!res.ok) {
+        try { window.dispatchEvent(new CustomEvent("bfs-save-failed", { detail: { status: res.status } })); } catch (e) {}
+      }
+      return res;
+    }).catch(() => {
+      try { window.dispatchEvent(new Event("bfs-save-failed")); } catch (e) {}
+    }).finally(() => { saveInFlight--; });
   }
 
   const SEED = {

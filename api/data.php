@@ -73,6 +73,14 @@ if ($method === 'POST') {
     // deactivated account loses write access immediately
     $me = bfs_session_admin();
     $authed = $me !== null;
+    // Admin pages flag their writes; if the session is gone we must NOT
+    // silently downgrade to a public write (which would drop the change
+    // while still returning ok).
+    if (!$authed && !empty($_SERVER['HTTP_X_BFS_ADMIN'])) {
+        http_response_code(401);
+        echo json_encode(['ok' => false, 'error' => 'session expired']);
+        exit;
+    }
     try {
         bfs_state_save($json, $authed, strlen($raw));
     } catch (Throwable $e) {

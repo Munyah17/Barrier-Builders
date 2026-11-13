@@ -180,11 +180,21 @@ function bfs_hide_admin_secrets(array &$state): void {
 /* ------------------------------------------------------------------ */
 
 // Returns map id => decoded item for a collection table.
+// Rows inserted directly via SQL (no usable `data` JSON) are rebuilt from
+// their promoted columns so they don't become invisible.
 function bfs_table_items(string $table): array {
     $out = [];
-    foreach (db()->query("SELECT id, data FROM `$table` ORDER BY sort_order, id") as $row) {
+    foreach (db()->query("SELECT * FROM `$table` ORDER BY sort_order, id") as $row) {
         $item = bfs_jd($row['data'] ?? null);
-        if (is_array($item)) { $item['id'] = $row['id']; $out[$row['id']] = $item; }
+        if (!is_array($item)) {
+            $item = [];
+            foreach ($row as $k => $v) {
+                if (in_array($k, ['id', 'sort_order', 'data', 'pass_hash', 'password'], true)) continue;
+                if ($v !== null && $v !== '') $item[$k] = $v;
+            }
+        }
+        $item['id'] = $row['id'];
+        $out[$row['id']] = $item;
     }
     return $out;
 }
@@ -545,6 +555,25 @@ function bfs_find_admin(array $state, $user) {
     return null;
 }
 
+// Column-based admin lookup — works even when the row's data JSON is missing
+// or was inserted directly into MySQL. Returns ['item'=>..., 'pass_hash'=>...].
+function bfs_admin_row_by_login(string $user): ?array {
+    $st = db()->prepare('SELECT id, username, name, email, active, protected, pass_hash, created_at, data FROM bfs_admins WHERE username = ? OR email = ? LIMIT 1');
+    $st->execute([$user, $user]);
+    $row = $st->fetch();
+    if (!$row) return null;
+    $item = bfs_jd($row['data'] ?? null);
+    if (!is_array($item)) $item = [];
+    // promoted columns are authoritative for identity fields
+    foreach (['id' => $row['id'], 'username' => $row['username'], 'name' => $row['name'],
+              'email' => $row['email'], 'active' => $row['active'], 'protected' => $row['protected'],
+              'createdAt' => $row['created_at']] as $k => $v) {
+        if ($v !== null && $v !== '') $item[$k] = $v;
+    }
+    $item['id'] = (string)$row['id'];
+    return ['item' => $item, 'pass_hash' => (string)($row['pass_hash'] ?? '')];
+}
+
 // Shared credential check. Returns the admin array on success (and upgrades
 // the stored hash), null on failure.
 function bfs_attempt_login($user, $pass) {
@@ -554,13 +583,29 @@ function bfs_attempt_login($user, $pass) {
         return null;
     }
     $found = bfs_find_admin($state ?: [], $user);
+    $credId = '';
     $ok = false;
     if ($found && (($found['active'] ?? true) !== false)) {
-        $cred = bfs_cred_row('bfs_admins', (string)($found['id'] ?? ''));
+        $credId = (string)($found['id'] ?? '');
+        $cred = bfs_cred_row('bfs_admins', $credId);
         $via = bfs_verify_cred($cred, (string)$pass);
         if ($via) {
             $ok = true;
-            try { bfs_upgrade_cred('bfs_admins', (string)$found['id'], $cred, (string)$pass); } catch (Throwable $e) {}
+            try { bfs_upgrade_cred('bfs_admins', $credId, $cred, (string)$pass); } catch (Throwable $e) {}
+        }
+    }
+    // fallback: find the account by its columns even if the state copy missed it
+    if (!$ok) {
+        $row = bfs_admin_row_by_login((string)$user);
+        if ($row && (($row['item']['active'] ?? true) !== false)) {
+            $cred = ['pass_hash' => $row['pass_hash'], 'item' => $row['item']];
+            $via = bfs_verify_cred($cred, (string)$pass);
+            if ($via) {
+                $found = $row['item'];
+                $credId = (string)$row['item']['id'];
+                $ok = true;
+                try { bfs_upgrade_cred('bfs_admins', $credId, $cred, (string)$pass); } catch (Throwable $e) {}
+            }
         }
     }
     if (!$ok && !$found) {

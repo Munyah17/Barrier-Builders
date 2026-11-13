@@ -50,7 +50,7 @@ function bindLogin() {
     if (err) err.textContent = "Checking…";
     const u = user.value.trim();
     const p = pass.value;
-    let session = false;
+    let session = false, serverErr = false;
     try {
       const res = await fetch("../api/data.php", {
         method: "POST",
@@ -58,11 +58,12 @@ function bindLogin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "login", user: u, pass: p })
       });
-      const j = await res.json().catch(() => ({}));
-      if (res.ok && j.ok) session = true;
-    } catch (ex) {}
+      const j = await res.json().catch(() => null);
+      if (res.ok && j && j.ok) session = true;
+      else if (!j || typeof j.ok !== "boolean") serverErr = true;
+    } catch (ex) { serverErr = true; }
     if (session) { location.href = "../admin/"; return; }
-    if (err) err.textContent = "Invalid credentials.";
+    if (err) err.textContent = serverErr ? "Server error — try again." : "Invalid credentials.";
   };
 }
 
@@ -1458,5 +1459,14 @@ function initCharts() {
 
 window.addEventListener("hashchange", render);
 window.addEventListener("bfs-accounts", () => { if (BFS.isAuthed()) render(); });
+// server rejected a save or the admin session expired mid-edit
+window.addEventListener("bfs-save-failed", e => {
+  const st = e && e.detail && e.detail.status;
+  alert("Save failed" + (st ? " (HTTP " + st + ")" : "") + " — the change was NOT stored. Check your connection and try again.");
+});
+window.addEventListener("bfs-session-expired", () => {
+  alert("Your admin session has expired — please sign in again.");
+  location.href = "../api/data.php?logout=1";
+});
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", render);
 else render();
