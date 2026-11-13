@@ -192,7 +192,7 @@ $bfsSession = $me ? [
       </form>
     </div>
   </div>
-  <script src="../js/store.js?v=14"></script>
+  <script src="../js/store.js?v=15"></script>
   <script src="../js/estimator.js?v=4"></script>
   <script src="js/admin-utils.js?v=3"></script>
   <script src="js/vanilla-utils.js?v=3"></script>

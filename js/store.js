@@ -49,8 +49,7 @@
       method: "POST",
       headers,
       credentials: "same-origin",
-      body: JSON.stringify(state),
-      keepalive: true
+      body: JSON.stringify(state)
     }).then(res => {
       if (res.status === 401) {
         try { window.dispatchEvent(new Event("bfs-session-expired")); } catch (e) {}

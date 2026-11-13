@@ -17,6 +17,12 @@ if ($path !== '/' && file_exists($file) && !is_dir($file)) {
     return false;
 }
 if (is_dir($file)) {
+    // index.php first (matches DirectoryIndex order) — let the built-in
+    // server execute it so PHP pages like /admin/ are never shadowed by a
+    // static index.html stub.
+    if (file_exists($file . '/index.php')) {
+        return false;
+    }
     $index = $file . '/index.html';
     if (file_exists($index)) {
         readfile($index);
