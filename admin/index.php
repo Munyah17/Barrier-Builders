@@ -1,4 +1,6 @@
 <?php
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_set_cookie_params([
         'lifetime' => 0,
@@ -145,11 +147,11 @@ $bfsSession = $me ? [
               <div class="header-button">
                 <div class="account-wrap">
                   <div class="account-item clearfix js-item-menu" role="button" tabindex="0" aria-haspopup="true" aria-label="Account menu">
-                    <div class="image"><img src="images/icon/avatar-01.jpg" alt=""></div>
+                    <div class="image"><img class="acct-avatar" src="" alt="" style="display:none"></div>
                     <div class="content"><a class="js-acc-btn" id="acct-name" href="#/profile"><?= htmlspecialchars($display, ENT_QUOTES, 'UTF-8') ?></a></div>
                     <div class="account-dropdown js-dropdown">
                       <div class="info clearfix">
-                        <div class="image"><a href="#/profile"><img src="images/icon/avatar-01.jpg" alt=""></a></div>
+                        <div class="image"><a href="#/profile"><img class="acct-avatar" src="" alt="" style="display:none"></a></div>
                         <div class="content">
                           <h5 class="name"><a href="#/profile" id="acct-name-drop"><?= htmlspecialchars($display, ENT_QUOTES, 'UTF-8') ?></a></h5><span class="email" id="acct-email"><?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?></span>
                         </div>
@@ -200,6 +202,6 @@ $bfsSession = $me ? [
   <script src="js/bootstrap5-init.js?v=3"></script>
   <script src="js/main-vanilla.js?v=4"></script>
   <script src="vendor/chartjs/chart.umd.js-4.5.1.min.js"></script>
-<script src="js/admin-app.js?v=20"></script>
+<script src="js/admin-app.js?v=21"></script>
 </body>
 </html>

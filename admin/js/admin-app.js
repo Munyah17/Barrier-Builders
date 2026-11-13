@@ -55,6 +55,30 @@ const ROUTE_PERM = {
   clients: "clients.manage", admins: "admins.manage", roles: "roles.manage", settings: "settings.manage"
 };
 
+/* ---------- record normalization ----------
+   Records can arrive with missing nested objects (customer/project/items/
+   steps) — e.g. imports or older saves. Guard every read path once here so
+   one malformed record can't kill an entire admin page render. */
+(function normalizeBfsRecords() {
+  if (!window.BFS) return;
+  const norm = r => {
+    if (!r || typeof r !== "object") return r;
+    if (r.customer === undefined) r.customer = {};
+    if (r.project === undefined) r.project = {};
+    if (r.items === undefined) r.items = [];
+    if (r.steps === undefined && r.tracking) r.steps = [];
+    return r;
+  };
+  ["quotes", "invoices", "orders", "clients", "leads", "contacts", "promotions", "gallery", "products"].forEach(k => {
+    const orig = BFS[k];
+    if (typeof orig === "function") BFS[k] = () => orig().map(norm);
+  });
+  ["quote", "invoice", "order", "product", "client", "lead"].forEach(k => {
+    const orig = BFS[k];
+    if (typeof orig === "function") BFS[k] = (...a) => norm(orig(...a));
+  });
+})();
+
 function requireAuth() {
   if (!BFS.isAuthed()) { renderLogin(); return false; }
   return true;
@@ -1451,7 +1475,10 @@ function syncAccount() {
   if (btn) btn.textContent = name;
   if (drop) drop.textContent = name;
   if (em) em.textContent = email;
-  if (me && me.avatar) document.querySelectorAll(".account-wrap .image img").forEach(img => { img.src = me.avatar; });
+  document.querySelectorAll(".acct-avatar").forEach(img => {
+    if (me && me.avatar) { img.src = me.avatar; img.style.display = ""; }
+    else { img.removeAttribute("src"); img.style.display = "none"; }
+  });
   if (!me) return;
   try {
     const a = JSON.parse(sessionStorage.getItem("bfs_auth") || "null");
@@ -1473,15 +1500,20 @@ function render() {
     dashboard, analytics, products, promotions, quotes, invoices, orders, gallery, content, messages, clients, admins, roles, settings, profile
   };
   let html;
-  if (r === "quote" && id) html = quoteDetail(id);
-  else if (r === "invoice" && id) html = invoiceDetail(id);
-  else {
-    const need = ROUTE_PERM[r];
-    if (need && !canPerm(need)) {
-      html = shell("No access", mCard("Access denied","Your role does not include this permission", `<p class="text-muted mb-0">Ask an administrator to grant <strong>${esc(PERM_LABELS[need] || need)}</strong> to your role.</p>`));
-    } else {
-      html = (map[r] || dashboard)();
+  try {
+    if (r === "quote" && id) html = quoteDetail(id);
+    else if (r === "invoice" && id) html = invoiceDetail(id);
+    else {
+      const need = ROUTE_PERM[r];
+      if (need && !canPerm(need)) {
+        html = shell("No access", mCard("Access denied","Your role does not include this permission", `<p class="text-muted mb-0">Ask an administrator to grant <strong>${esc(PERM_LABELS[need] || need)}</strong> to your role.</p>`));
+      } else {
+        html = (map[r] || dashboard)();
+      }
     }
+  } catch (err) {
+    console.error("admin render failed:", err);
+    html = shell("Error", mCard("This page failed to load", esc(err && err.message || "Unknown error"), `<p class="text-muted mb-0">The underlying data may be incomplete — try reloading or editing the record.</p>`));
   }
   document.getElementById("app").innerHTML = html;
   syncNav(r);
