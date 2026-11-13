@@ -51,6 +51,10 @@ foreach (['bfs_admins', 'bfs_clients'] as $tbl) {
     }
 }
 
+// 1c. Roles & permissions schema (idempotent) -------------------------------
+bfs_ensure_roles_schema();
+out('Roles schema ensured.');
+
 // 2. Source state -------------------------------------------------------------
 $state = null; $source = '';
 try {
@@ -82,7 +86,7 @@ if (!$go) { out('Pass ?go=1 to run.'); exit(0); }
 
 // 4. Write --------------------------------------------------------------------
 try {
-    bfs_state_save($state, true, 0);
+    bfs_state_save($state, true, 0, true); // allowAdmins: seed accounts on install
     out("Migrated state from {$source}.");
     foreach (['products','quotes','invoices','orders','clients','admins','leads','contacts','promotions','gallery'] as $k) {
         out(sprintf('  %-12s %d rows', $k, count($state[$k] ?? [])));

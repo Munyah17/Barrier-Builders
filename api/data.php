@@ -57,8 +57,17 @@ if ($method === 'POST') {
     // JSON login for fetch() callers — reliable, no redirect sniffing.
     // The static form fallback below keeps the redirect behaviour.
     if ($isJson && ($json['action'] ?? '') === 'login') {
-        $ok = bfs_login_api((string)($json['user'] ?? ''), (string)($json['pass'] ?? ''));
-        echo json_encode(['ok' => $ok]);
+        try {
+            $me = bfs_login_api((string)($json['user'] ?? ''), (string)($json['pass'] ?? ''));
+        } catch (Throwable $e) {
+            error_log('data.php login: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => 'server_error']);
+            exit;
+        }
+        if ($me) { echo json_encode(['ok' => true]); exit; }
+        http_response_code(401);
+        echo json_encode(['ok' => false, 'error' => 'invalid_credentials']);
         exit;
     }
     if (!$isJson && isset($_POST['action']) && $_POST['action'] === 'login') {
@@ -79,6 +88,13 @@ if ($method === 'POST') {
     if (!$authed && !empty($_SERVER['HTTP_X_BFS_ADMIN'])) {
         http_response_code(401);
         echo json_encode(['ok' => false, 'error' => 'session expired']);
+        exit;
+    }
+    // authenticated whole-state writes require the 'sync' permission —
+    // restricted roles cannot push arbitrary state
+    if ($authed && !bfs_admin_can($me, 'sync')) {
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'error' => 'forbidden']);
         exit;
     }
     try {

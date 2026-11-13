@@ -144,7 +144,18 @@ CREATE TABLE IF NOT EXISTS bfs_clients (
   data        MEDIUMTEXT   NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Admin / yard accounts.
+-- Roles & permissions. permissions is a JSON array of permission keys;
+-- the special key "*" grants everything (owner / Administrator role).
+CREATE TABLE IF NOT EXISTS bfs_roles (
+  id          VARCHAR(64)  NOT NULL PRIMARY KEY,
+  sort_order  INT          NOT NULL DEFAULT 0,
+  name        VARCHAR(120) NOT NULL DEFAULT '',
+  permissions MEDIUMTEXT   NULL,
+  data        MEDIUMTEXT   NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Admin / yard accounts. Credentials live in pass_hash (password_hash());
+-- the `data` JSON never carries a usable password.
 CREATE TABLE IF NOT EXISTS bfs_admins (
   id          VARCHAR(64)  NOT NULL PRIMARY KEY,
   sort_order  INT          NOT NULL DEFAULT 0,
@@ -155,6 +166,7 @@ CREATE TABLE IF NOT EXISTS bfs_admins (
   pass_hash   VARCHAR(255) NULL,
   active      TINYINT(1)   NOT NULL DEFAULT 1,
   protected   TINYINT(1)   NOT NULL DEFAULT 0,
+  role_id     VARCHAR(64)  NULL,
   created_at  VARCHAR(40)  NULL,
   data        MEDIUMTEXT   NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

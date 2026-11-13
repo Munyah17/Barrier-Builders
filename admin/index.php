@@ -27,6 +27,8 @@ $bfsSession = $me ? [
     'user' => (string)$me['user'],
     'name' => $display,
     'email' => $email,
+    'role_id' => (string)($me['role_id'] ?? ''),
+    'perms' => $me['perms'] ?? ['*'],
 ] : null;
 ?>
 <!DOCTYPE html>
@@ -75,6 +77,7 @@ $bfsSession = $me ? [
             <li><a href="#/messages"><i class="fa-solid fa-envelope"></i>Messages</a></li>
             <li><a href="#/clients"><i class="fa-solid fa-users"></i>Clients</a></li>
             <li><a href="#/admins"><i class="fa-solid fa-user-shield"></i>Admins</a></li>
+            <li><a href="#/roles"><i class="fa-solid fa-key"></i>Roles</a></li>
             <li><a href="#/settings"><i class="fa-solid fa-gear"></i>Settings</a></li>
             <li><a href="#/profile"><i class="fa-solid fa-circle-user"></i>Profile</a></li>
             <li><a href="../" target="_blank"><i class="fa-solid fa-globe"></i>View website</a></li>
@@ -121,6 +124,7 @@ $bfsSession = $me ? [
             <li><a href="#/messages" data-nav="messages"><i class="fa-solid fa-envelope"></i>Messages</a></li>
             <li><a href="#/clients" data-nav="clients"><i class="fa-solid fa-users"></i>Clients</a></li>
             <li><a href="#/admins" data-nav="admins"><i class="fa-solid fa-user-shield"></i>Admins</a></li>
+            <li><a href="#/roles" data-nav="roles"><i class="fa-solid fa-key"></i>Roles</a></li>
             <li><a href="#/settings" data-nav="settings"><i class="fa-solid fa-gear"></i>Settings</a></li>
             <li><a href="#/profile" data-nav="profile"><i class="fa-solid fa-circle-user"></i>Profile</a></li>
           </ul>
@@ -196,6 +200,6 @@ $bfsSession = $me ? [
   <script src="js/bootstrap5-init.js?v=3"></script>
   <script src="js/main-vanilla.js?v=4"></script>
   <script src="vendor/chartjs/chart.umd.js-4.5.1.min.js"></script>
-<script src="js/admin-app.js?v=18"></script>
+<script src="js/admin-app.js?v=19"></script>
 </body>
 </html>

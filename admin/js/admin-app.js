@@ -14,6 +14,47 @@ async function awaitSync() {
   return true;
 }
 
+/* ---------- admin accounts & roles API (dedicated endpoint) ---------- */
+const ADMINS_API = "../api/admins.php";
+let ADMIN_DATA = null; // { admins, roles, permissions, me }
+async function adminsApi(payload) {
+  const res = await fetch(ADMINS_API, {
+    method: payload ? "POST" : "GET",
+    credentials: "same-origin",
+    headers: payload ? { "Content-Type": "application/json" } : undefined,
+    body: payload ? JSON.stringify(payload) : undefined
+  });
+  const j = await res.json().catch(() => null);
+  if (!j) { const e = new Error("server error"); e.status = res.status; throw e; }
+  if (!j.ok) { const e = new Error(j.error || "request failed"); e.status = res.status; e.code = j.error; throw e; }
+  return j;
+}
+async function loadAdminData(force) {
+  if (ADMIN_DATA && !force) return ADMIN_DATA;
+  ADMIN_DATA = await adminsApi(null);
+  return ADMIN_DATA;
+}
+function canPerm(perm) {
+  const p = (window.BFS_SESSION && window.BFS_SESSION.perms) || ["*"];
+  return p.includes("*") || p.includes(perm);
+}
+const PERM_LABELS = {
+  "dashboard.view": "View dashboard", "analytics.view": "View analytics",
+  "products.manage": "Manage products", "promotions.manage": "Manage promotions",
+  "gallery.manage": "Manage gallery", "quotes.manage": "Manage quotations",
+  "invoices.manage": "Manage invoices", "orders.manage": "Manage orders",
+  "content.manage": "Edit site content", "messages.manage": "Manage messages",
+  "clients.manage": "Manage clients", "admins.manage": "Manage admin accounts",
+  "roles.manage": "Manage roles", "settings.manage": "Manage settings",
+  "sync": "Save site data (required for most edits)"
+};
+const ROUTE_PERM = {
+  analytics: "analytics.view", products: "products.manage", promotions: "promotions.manage",
+  gallery: "gallery.manage", quotes: "quotes.manage", invoices: "invoices.manage",
+  orders: "orders.manage", content: "content.manage", messages: "messages.manage",
+  clients: "clients.manage", admins: "admins.manage", roles: "roles.manage", settings: "settings.manage"
+};
+
 function requireAuth() {
   if (!BFS.isAuthed()) { renderLogin(); return false; }
   return true;
@@ -71,6 +112,7 @@ function bindLogin() {
       });
       const j = await res.json().catch(() => null);
       if (res.ok && j && j.ok) session = true;
+      else if (j && j.error === "server_error") serverErr = true;
       else if (!j || typeof j.ok !== "boolean") serverErr = true;
     } catch (ex) { serverErr = true; }
     if (session) { location.href = "../admin/"; return; }
@@ -842,43 +884,57 @@ function openClient(c) {
   };
 }
 
-/* ---------- admins ---------- */
+/* ---------- admins (server-side accounts & roles) ---------- */
 function admins() {
-  const me = JSON.parse(sessionStorage.getItem("bfs_auth") || "null");
-  const rows = BFS.admins().map(a => {
-    const active = a.active !== false;
-    const owner = BFS.isOwnerAdmin && BFS.isOwnerAdmin(a);
+  const d = ADMIN_DATA;
+  if (!d) {
+    loadAdminData().then(() => render()).catch(() => {});
+    return shell("Admins", mCard("Admins", "Loading accounts…", `<div class="text-muted">Fetching from server…</div>`));
+  }
+  const sess = JSON.parse(sessionStorage.getItem("bfs_auth") || "null");
+  const roleName = rid => { const r = (d.roles || []).find(x => x.id === rid); return r ? r.name : (rid || "—"); };
+  const rows = (d.admins || []).map(a => {
+    const owner = a.protected || BFS.isOwnerAdmin && BFS.isOwnerAdmin(a);
     const label = (a.name && String(a.name).toLowerCase() !== "yard admin") ? a.name : (a.username || "Admin");
     return `<tr>
-    <td><strong>${esc(label)}</strong>${owner ? " " + badge("owner","bg-dark") : ""}${me && String(me.id) === String(a.id) ? " " + badge("you","bg-success") : ""}<div class="text-muted small">${esc(a.username || "")}${a.email ? " · " + esc(a.email) : ""}</div></td>
+    <td><strong>${esc(label)}</strong>${owner ? " " + badge("owner","bg-dark") : ""}${sess && String(sess.id) === String(a.id) ? " " + badge("you","bg-success") : ""}<div class="text-muted small">${esc(a.username || "")}${a.email ? " · " + esc(a.email) : ""}</div></td>
+    <td class="text-muted small">${roleName(a.role_id)}</td>
     <td class="text-muted small">${a.createdAt ? new Date(a.createdAt).toLocaleDateString("en-GB") : "—"}</td>
-    <td>${badge(active?"Active":"Disabled", active?"bg-success":"bg-secondary")}</td>
+    <td>${badge(a.active!==false?"Active":"Disabled", a.active!==false?"bg-success":"bg-secondary")}</td>
     <td class="text-end">
       <button type="button" class="btn btn-sm btn-outline-secondary" title="Edit" data-aedit="${esc(a.id)}"><i class="fa-solid fa-pen"></i></button>
-      ${owner ? "" : `<button type="button" class="btn btn-sm btn-outline-secondary" title="${active?"Deactivate":"Activate"}" data-aact="${esc(a.id)}"><i class="fa-solid ${active?"fa-user-slash":"fa-user-check"}"></i></button><button type="button" class="btn btn-sm btn-outline-danger" title="Delete" data-adel="${esc(a.id)}"><i class="fa-solid fa-trash"></i></button>`}
+      ${owner ? "" : `<button type="button" class="btn btn-sm btn-outline-secondary" title="${a.active!==false?"Deactivate":"Activate"}" data-aact="${esc(a.id)}" data-active="${a.active!==false?"0":"1"}"><i class="fa-solid ${a.active!==false?"fa-user-slash":"fa-user-check"}"></i></button><button type="button" class="btn btn-sm btn-outline-danger" title="Delete" data-adel="${esc(a.id)}"><i class="fa-solid fa-trash"></i></button>`}
     </td></tr>`;
-  }).join("");
-  const expRows = BFS.admins().map(a => [a.username, a.email||"", a.active!==false?"Active":"Disabled", a.createdAt?new Date(a.createdAt).toLocaleDateString():""]);
-  regExport("admins", { filename:"admins", title:"Admins", headers:["Username","Email","Status","Created"], rows:expRows, subtitle:"Barrier Builders admins" });
-  return shell("Admins", mCard("Admins","Staff with full access", `<div id="exp-admins">${tbl(th(["Username","Created","Status",""]), rows)}</div>`,
+  }).join("") || `<tr><td colspan="5" class="text-muted">No admin accounts.</td></tr>`;
+  const expRows = (d.admins || []).map(a => [a.username, a.email||"", roleName(a.role_id), a.active!==false?"Active":"Disabled", a.createdAt?new Date(a.createdAt).toLocaleDateString():""]);
+  regExport("admins", { filename:"admins", title:"Admins", headers:["Username","Email","Role","Status","Created"], rows:expRows, subtitle:"Barrier Builders admins" });
+  return shell("Admins", mCard("Admins","Admin accounts & assigned roles", `<div id="exp-admins">${tbl(th(["Admin","Role","Created","Status",""]), rows)}</div>`,
     `<div class="d-flex gap-2 flex-wrap"><button class="m-btn m-btn--primary" id="addA"><i class="fa-solid fa-plus"></i> Add admin</button>${exportMenu("admins")}</div>`) + `<div id="editor" style="margin-top:16px"></div>`);
 }
 function adminForm(a) {
-  a = a || { username:"", email:"", password:"", active:true };
+  a = a || { username:"", email:"", password:"", active:true, role_id:"role-admin" };
+  const roles = (ADMIN_DATA && ADMIN_DATA.roles) || [];
+  const roleOpts = roles.map(r => `<option value="${esc(r.id)}" ${String(a.role_id||"role-admin")===r.id?"selected":""}>${esc(r.name)}</option>`).join("");
   return `<section class="m-card"><header class="m-card__header"><div><h2 class="m-card__title">${a.id?"Edit":"New"} admin account</h2></div></header>
   <form id="af2">
     <div class="row g-3">
       <div class="col-md-6"><label class="form-label">Username</label><input name="username" class="form-control" value="${esc(a.username)}" required></div>
       <div class="col-md-6"><label class="form-label">Email</label><input name="email" type="email" class="form-control" value="${esc(a.email||"")}"></div>
-      <div class="col-12"><label class="form-label">${a.id?"New password (blank to keep)":"Password"}</label><input name="password" type="text" class="form-control" ${a.id?"":"required minlength=\"6\""}></div>
+      <div class="col-md-6"><label class="form-label">Role</label><select name="role_id" class="form-control">${roleOpts}</select></div>
+      <div class="col-md-6"><label class="form-label">${a.id?"New password (blank to keep)":"Password"}</label><input name="password" type="text" class="form-control" ${a.id?"":"required minlength=\"6\""}></div>
     </div>
     <div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="active" id="af-act" ${a.active!==false?"checked":""}><label class="form-check-label" for="af-act">Account active</label></div>
     <div class="d-flex gap-2 mt-3"><button class="m-btn m-btn--primary" type="submit">Save</button><button class="m-btn m-btn--ghost" type="button" id="cancel">Cancel</button></div>
   </form></section>`;
 }
 function bindAdmins() {
-  document.querySelectorAll("[data-aedit]").forEach(b => b.onclick = () => openAdmin(BFS.admin(b.getAttribute("data-aedit"))));
-  document.querySelectorAll("[data-aact]").forEach(b => b.onclick = () => { const a=BFS.admin(b.getAttribute("data-aact")); if (!a) return; BFS.setAdminActive(a.id, a.active===false); render(); });
+  const findAdmin = id => (ADMIN_DATA && ADMIN_DATA.admins || []).find(x => String(x.id) === String(id));
+  document.querySelectorAll("[data-aedit]").forEach(b => b.onclick = () => { const a = findAdmin(b.getAttribute("data-aedit")); if (a) openAdmin(a); });
+  document.querySelectorAll("[data-aact]").forEach(b => b.onclick = async () => {
+    const id = b.getAttribute("data-aact"); const active = b.getAttribute("data-active") === "1";
+    try { await adminsApi({ action: "setactive", id, active }); await loadAdminData(true); render(); }
+    catch (err) { alert("Update failed: " + err.message); }
+  });
   const aa = document.getElementById("addA");
   if (aa) aa.onclick = () => openAdmin(null);
 }
@@ -891,24 +947,16 @@ if (!window.__bfsAdminDeleteBound) {
     e.preventDefault();
     e.stopPropagation();
     const id = btn.getAttribute("data-adel");
-    const admin = BFS.admin(id);
-    if (admin && BFS.isOwnerAdmin && BFS.isOwnerAdmin(admin)) {
-      alert("Munyah's admin profile cannot be deleted.");
-      return;
-    }
+    const admin = (ADMIN_DATA && ADMIN_DATA.admins || []).find(x => String(x.id) === String(id));
+    if (admin && admin.protected) { alert("The owner admin profile cannot be deleted."); return; }
     const label = admin ? (admin.name || admin.username || admin.email || "this admin") : "this admin";
     if (!confirm("Delete " + label + "? They will no longer be able to sign in.")) return;
     (async () => {
       try {
-        const me = window.BFS_SESSION;
-        BFS.deleteAdmin(id);
-        if (!(await awaitSync())) return;
-        if (me && String(me.id) === String(id)) {
-          location.href = "../api/data.php?logout=1";
-          return;
-        }
+        await adminsApi({ action: "delete", id });
+        await loadAdminData(true);
         render();
-      } catch (err) { alert(err.message); }
+      } catch (err) { alert("Delete failed: " + err.message); }
     })();
   }, true);
 }
@@ -923,23 +971,100 @@ function openAdmin(a) {
     e.preventDefault();
     const fd = new FormData(form);
     const un = fd.get("username").trim();
-    if (BFS.admins().some(x => x.id !== (a&&a.id) && (x.username||"").toLowerCase() === un.toLowerCase())) { alert("That username is taken."); return; }
-    const activeChecked = form.querySelector('[name="active"]').checked;
+    const pw = (fd.get("password") || "").trim();
+    const list = (ADMIN_DATA && ADMIN_DATA.admins) || [];
+    if (list.some(x => x.id !== (a && a.id) && (x.username || "").toLowerCase() === un.toLowerCase())) { alert("That username is taken."); return; }
+    const payload = a
+      ? { action: "update", id: a.id, username: un, email: fd.get("email").trim(), active: form.querySelector('[name="active"]').checked, role_id: fd.get("role_id") }
+      : { action: "create", username: un, email: fd.get("email").trim(), password: pw, active: form.querySelector('[name="active"]').checked, role_id: fd.get("role_id") };
+    if (pw) payload.password = pw;
     const submitBtn = form.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
     try {
-      if (a) {
-        a.username = un; a.email = fd.get("email").trim(); a.active = activeChecked;
-        if (fd.get("password")) a.password = btoa(unescape(encodeURIComponent(fd.get("password"))));
-        BFS.saveAdmin(a);
-      } else {
-        BFS.saveAdmin({ username: un, email: fd.get("email").trim(), password: btoa(unescape(encodeURIComponent(fd.get("password") || ""))), active: activeChecked });
-      }
-      if (!(await awaitSync())) return; // keep the form open on failure
-      render();
+      await adminsApi(payload);       // server confirms before we close
+      await loadAdminData(true);
+      render();                        // editor closes only on success
+    } catch (err) {
+      alert("Save failed: " + err.message); // form stays open
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }
+  };
+}
+
+/* ---------- roles ---------- */
+function roles() {
+  const d = ADMIN_DATA;
+  if (!d) {
+    loadAdminData().then(() => render()).catch(() => {});
+    return shell("Roles", mCard("Roles", "Loading…", `<div class="text-muted">Fetching from server…</div>`));
+  }
+  const permNames = d.permissions || [];
+  const rows = (d.roles || []).map(r => {
+    const members = (d.admins || []).filter(a => a.role_id === r.id).length;
+    const desc = r.permissions.includes("*") ? "All permissions" : (r.permissions || []).map(p => PERM_LABELS[p] || p).join(", ") || "No permissions";
+    return `<tr>
+      <td><strong>${esc(r.name)}</strong>${r.builtin ? " " + badge("built-in","bg-dark") : ""}</td>
+      <td class="text-muted small">${esc(desc)}</td>
+      <td class="text-muted small">${members} admin${members===1?"":"s"}</td>
+      <td class="text-end">
+        ${r.builtin ? "" : `<button type="button" class="btn btn-sm btn-outline-secondary" title="Edit" data-redit="${esc(r.id)}"><i class="fa-solid fa-pen"></i></button><button type="button" class="btn btn-sm btn-outline-danger" title="Delete" data-rdel="${esc(r.id)}"><i class="fa-solid fa-trash"></i></button>`}
+      </td></tr>`;
+  }).join("");
+  return shell("Roles", mCard("Roles","Permission sets assigned to admin accounts", `<div id="exp-roles">${tbl(th(["Role","Permissions","Members",""]), rows)}</div>`,
+    canPerm("roles.manage") ? `<button class="m-btn m-btn--primary" id="addR"><i class="fa-solid fa-plus"></i> New role</button>` : "") + `<div id="editor" style="margin-top:16px"></div>`);
+}
+function roleForm(r) {
+  r = r || { name: "", permissions: [] };
+  const d = ADMIN_DATA || { permissions: [] };
+  const boxes = (d.permissions || []).map(p =>
+    `<div class="form-check"><input class="form-check-input" type="checkbox" name="perm" value="${esc(p)}" id="rp_${esc(p)}" ${ (r.permissions||[]).includes(p) ? "checked" : ""}><label class="form-check-label" for="rp_${esc(p)}">${esc(PERM_LABELS[p] || p)}</label></div>`
+  ).join("");
+  return `<section class="m-card"><header class="m-card__header"><div><h2 class="m-card__title">${r.id?"Edit":"New"} role</h2></div></header>
+  <form id="rf">
+    <div class="mb-3" style="max-width:420px"><label class="form-label">Role name</label><input name="name" class="form-control" value="${esc(r.name)}" required></div>
+    <label class="form-label">Permissions</label>
+    <div class="row g-2 mb-3">${boxes}</div>
+    <div class="d-flex gap-2"><button class="m-btn m-btn--primary" type="submit">Save role</button><button class="m-btn m-btn--ghost" type="button" id="cancel">Cancel</button></div>
+  </form></section>`;
+}
+function bindRoles() {
+  const addR = document.getElementById("addR");
+  if (addR) addR.onclick = () => openRole(null);
+  document.querySelectorAll("[data-redit]").forEach(b => b.onclick = () => {
+    const r = (ADMIN_DATA.roles || []).find(x => x.id === b.getAttribute("data-redit"));
+    if (r) openRole(r);
+  });
+  document.querySelectorAll("[data-rdel]").forEach(b => b.onclick = async () => {
+    const id = b.getAttribute("data-rdel");
+    const r = (ADMIN_DATA.roles || []).find(x => x.id === id);
+    if (!r || !confirm("Delete role " + r.name + "?")) return;
+    try { await adminsApi({ action: "role-delete", id }); await loadAdminData(true); render(); }
+    catch (err) { alert("Delete failed: " + err.message); }
+  });
+}
+function openRole(r) {
+  const box = document.getElementById("editor");
+  if (!box) return;
+  showEditor(roleForm(r));
+  const cancelBtn = box.querySelector("#cancel");
+  const form = box.querySelector("#rf");
+  if (cancelBtn) cancelBtn.onclick = () => { box.innerHTML = ""; };
+  if (form) form.onsubmit = async e => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const permissions = fd.getAll("perm");
+    const payload = r
+      ? { action: "role-update", id: r.id, name: fd.get("name").trim(), permissions }
+      : { action: "role-create", name: fd.get("name").trim(), permissions };
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+      await adminsApi(payload);
+      await loadAdminData(true);
+      render();
+    } catch (err) { alert("Save failed: " + err.message); }
+    finally { if (submitBtn) submitBtn.disabled = false; }
   };
 }
 
@@ -1009,18 +1134,21 @@ function bindProfile() {
     const fd = new FormData(form);
     const me = BFS.adminAuthed(); if (!me) return;
     const un = fd.get("username").trim();
-    if (BFS.admins().some(a => a.id !== me.id && (a.username||"").toLowerCase() === un.toLowerCase())) { alert("That username is taken."); return; }
-    me.name = fd.get("name") || me.username;
-    if (String(me.name).trim().toLowerCase() === "yard admin") me.name = me.username;
-    me.username = un;
-    me.email = fd.get("email").trim();
-    if (avatarData) me.avatar = avatarData;
-    if (fd.get("password")) me.password = btoa(unescape(encodeURIComponent(fd.get("password"))));
-    BFS.saveAdmin(me);
-    if (!(await awaitSync())) return;
-    const auth = JSON.parse(sessionStorage.getItem("bfs_auth") || "null");
-    if (auth) { auth.user = me.username; sessionStorage.setItem("bfs_auth", JSON.stringify(auth)); }
-    alert("Profile saved."); render();
+    const list = (ADMIN_DATA && ADMIN_DATA.admins) || BFS.admins();
+    if (list.some(a => String(a.id) !== String(me.id) && (a.username||"").toLowerCase() === un.toLowerCase())) { alert("That username is taken."); return; }
+    const pw = (fd.get("password") || "").trim();
+    const payload = { action: "updateprofile", name: fd.get("name") || un, username: un, email: fd.get("email").trim(), avatar: avatarData || undefined };
+    if (pw) payload.password = pw;
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+    try {
+      await adminsApi(payload); // server confirms before we claim success
+      const auth = JSON.parse(sessionStorage.getItem("bfs_auth") || "null");
+      if (auth) { auth.user = un; auth.name = payload.name; sessionStorage.setItem("bfs_auth", JSON.stringify(auth)); }
+      if (window.BFS_SESSION) { window.BFS_SESSION.user = un; window.BFS_SESSION.name = payload.name; }
+      alert("Profile saved."); render();
+    } catch (err) { alert("Save failed: " + err.message); }
+    finally { if (btn) btn.disabled = false; }
   };
 }
 
@@ -1282,6 +1410,18 @@ function bindContent() {
 
 /* ---------- router ---------- */
 function syncNav(r) {
+  // hide nav entries the current role cannot access
+  document.querySelectorAll("[data-nav]").forEach(a => {
+    const need = ROUTE_PERM[a.dataset.nav];
+    const li = a.closest("li");
+    if (li) li.style.display = (!need || canPerm(need)) ? "" : "none";
+  });
+  document.querySelectorAll(".navbar-mobile__list a[href^='#/']").forEach(a => {
+    const rr = a.getAttribute("href").replace(/^#\/?/, "");
+    const need = ROUTE_PERM[rr];
+    const li = a.closest("li");
+    if (li) li.style.display = (!need || canPerm(need)) ? "" : "none";
+  });
   document.querySelectorAll("[data-nav]").forEach(a => {
     const navKey = a.dataset.nav;
     const on = navKey === r || (r === "quote" && navKey === "quotes") || (r === "invoice" && navKey === "invoices");
@@ -1330,12 +1470,19 @@ function render() {
   showApp();
   const [r, id] = route();
   const map = {
-    dashboard, analytics, products, promotions, quotes, invoices, orders, gallery, content, messages, clients, admins, settings, profile
+    dashboard, analytics, products, promotions, quotes, invoices, orders, gallery, content, messages, clients, admins, roles, settings, profile
   };
   let html;
   if (r === "quote" && id) html = quoteDetail(id);
   else if (r === "invoice" && id) html = invoiceDetail(id);
-  else html = (map[r] || dashboard)();
+  else {
+    const need = ROUTE_PERM[r];
+    if (need && !canPerm(need)) {
+      html = shell("No access", mCard("Access denied","Your role does not include this permission", `<p class="text-muted mb-0">Ask an administrator to grant <strong>${esc(PERM_LABELS[need] || need)}</strong> to your role.</p>`));
+    } else {
+      html = (map[r] || dashboard)();
+    }
+  }
   document.getElementById("app").innerHTML = html;
   syncNav(r);
   syncAccount();
@@ -1389,6 +1536,7 @@ function render() {
   if (r === "content") bindContent();
   if (r === "clients") bindClients();
   if (r === "admins") bindAdmins();
+  if (r === "roles") bindRoles();
   if (r === "settings") {
     const sfEl = document.getElementById("sf");
     if (sfEl) sfEl.onsubmit = e => {

@@ -396,7 +396,7 @@ function bfs_preserve_admin_secrets(array &$state): void {
     }
 }
 
-function bfs_state_save(array $state, bool $authed, int $bytes = 0): void {
+function bfs_state_save(array $state, bool $authed, int $bytes = 0, bool $allowAdmins = false): void {
     $pdo = db();
     $pdo->beginTransaction();
     try {
@@ -413,6 +413,9 @@ function bfs_state_save(array $state, bool $authed, int $bytes = 0): void {
                 bfs_sync_content($pdo, $state['content']);
             }
             foreach (bfs_defs() as $key => $def) {
+                // admin accounts are written ONLY through api/admins.php
+                // (dedicated endpoint with duplicate/role/permission checks)
+                if ($key === 'admins' && !$allowAdmins) continue;
                 if (array_key_exists($key, $state)) {
                     bfs_sync_collection($pdo, $def, is_array($state[$key]) ? $state[$key] : [], 'mirror');
                 }
@@ -504,10 +507,127 @@ function bfs_upgrade_cred(string $table, string $id, ?array $credRow, string $pl
 }
 
 /* ------------------------------------------------------------------ */
+/* roles & permissions                                                */
+/* ------------------------------------------------------------------ */
+
+// Canonical permission keys enforced by api/admins.php and the whole-state
+// write gate in api/data.php.
+function bfs_all_permissions(): array {
+    return [
+        'dashboard.view', 'analytics.view',
+        'products.manage', 'promotions.manage', 'gallery.manage',
+        'quotes.manage', 'invoices.manage', 'orders.manage',
+        'content.manage', 'messages.manage', 'clients.manage',
+        'admins.manage', 'roles.manage', 'settings.manage', 'sync',
+    ];
+}
+
+// Idempotent schema ensure for roles — safe to call from any endpoint.
+function bfs_ensure_roles_schema(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    $pdo = db();
+    $pdo->exec("CREATE TABLE IF NOT EXISTS bfs_roles (
+        id VARCHAR(64) NOT NULL PRIMARY KEY,
+        sort_order INT NOT NULL DEFAULT 0,
+        name VARCHAR(120) NOT NULL DEFAULT '',
+        permissions MEDIUMTEXT NULL,
+        data MEDIUMTEXT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    if (!$pdo->query("SHOW COLUMNS FROM bfs_admins LIKE 'role_id'")->fetchColumn()) {
+        $pdo->exec("ALTER TABLE bfs_admins ADD COLUMN role_id VARCHAR(64) NULL");
+    }
+    if (!(int)$pdo->query("SELECT COUNT(*) FROM bfs_roles")->fetchColumn()) {
+        $pdo->prepare("INSERT INTO bfs_roles (id, sort_order, name, permissions, data) VALUES (?,?,?,?,?)")
+            ->execute(['role-admin', 0, 'Administrator', json_encode(['*']), json_encode(['builtin' => true])]);
+    }
+    // existing admins keep full access — assign them the Administrator role
+    $pdo->exec("UPDATE bfs_admins SET role_id = 'role-admin' WHERE role_id IS NULL OR role_id = ''");
+}
+
+function bfs_roles_all(): array {
+    bfs_ensure_roles_schema();
+    $out = [];
+    foreach (db()->query("SELECT * FROM bfs_roles ORDER BY sort_order, name") as $r) {
+        $meta = bfs_jd($r['data'] ?? null);
+        $out[] = [
+            'id' => (string)$r['id'],
+            'name' => (string)$r['name'],
+            'permissions' => bfs_jd($r['permissions'] ?? null) ?: [],
+            'builtin' => !empty($meta['builtin']),
+        ];
+    }
+    return $out;
+}
+
+function bfs_role(string $id): ?array {
+    foreach (bfs_roles_all() as $r) if ($r['id'] === $id) return $r;
+    return null;
+}
+
+// Permission set for an admin item/row. Owner and admins without an explicit
+// role keep full access (backwards compatible); a role that no longer exists
+// grants nothing.
+function bfs_admin_perms(array $admin): array {
+    if (bfs_is_owner_admin($admin)) return ['*'];
+    $rid = (string)($admin['role_id'] ?? $admin['roleId'] ?? '');
+    if ($rid === '') return ['*'];
+    $role = bfs_role($rid);
+    if (!$role) return [];
+    $p = $role['permissions'];
+    return in_array('*', $p, true) ? ['*'] : $p;
+}
+
+function bfs_admin_can(array $admin, string $perm): bool {
+    $p = bfs_admin_perms($admin);
+    return in_array('*', $p, true) || in_array($perm, $p, true);
+}
+
+/* ------------------------------------------------------------------ */
+/* admin rows (column-first, data JSON optional)                       */
+/* ------------------------------------------------------------------ */
+
+// Merge a bfs_admins row into a state item: columns win for identity fields,
+// data JSON supplies the rest. Never exposes pass_hash/password.
+function bfs_admin_row_to_item(array $row): array {
+    $item = bfs_jd($row['data'] ?? null);
+    if (!is_array($item)) $item = [];
+    foreach (['id' => $row['id'], 'username' => $row['username'], 'name' => $row['name'],
+              'email' => $row['email'], 'active' => $row['active'], 'protected' => $row['protected'],
+              'role_id' => $row['role_id'] ?? null, 'createdAt' => $row['created_at']] as $k => $v) {
+        if ($v === null || $v === '') continue;
+        // TINYINT columns come back as 0/1 — normalise to real booleans so
+        // `=== false` checks work everywhere
+        $item[$k] = ($k === 'active' || $k === 'protected') ? (bool)(int)$v : $v;
+    }
+    $item['id'] = (string)$row['id'];
+    unset($item['password']);
+    return $item;
+}
+
+function bfs_admin_row_by_login(string $user): ?array {
+    $st = db()->prepare('SELECT id, username, name, email, active, protected, role_id, pass_hash, created_at, data FROM bfs_admins WHERE username = ? OR email = ? LIMIT 1');
+    $st->execute([$user, $user]);
+    $row = $st->fetch();
+    if (!$row) return null;
+    return ['item' => bfs_admin_row_to_item($row), 'pass_hash' => (string)($row['pass_hash'] ?? '')];
+}
+
+function bfs_admin_row_by_id(string $id): ?array {
+    $st = db()->prepare('SELECT id, username, name, email, active, protected, role_id, pass_hash, created_at, data FROM bfs_admins WHERE id = ? LIMIT 1');
+    $st->execute([$id]);
+    $row = $st->fetch();
+    if (!$row) return null;
+    return ['item' => bfs_admin_row_to_item($row), 'pass_hash' => (string)($row['pass_hash'] ?? '')];
+}
+
+/* ------------------------------------------------------------------ */
 /* admin session revalidation                                          */
 /* ------------------------------------------------------------------ */
 
-// Returns the session admin only if the account still exists and is active.
+// Returns the session admin (with perms) only if the account still exists,
+// is active, and is verified against the bfs_admins row — not browser state.
 function bfs_session_admin() {
     static $cache = null, $done = false;
     if ($done) return $cache;
@@ -516,20 +636,22 @@ function bfs_session_admin() {
     if (!is_array($s) || empty($s['user'])) return null;
     try {
         $sid = (string)($s['id'] ?? '');
-        $user = strtolower(trim((string)$s['user']));
-        foreach (bfs_table_items('bfs_admins') as $a) {
-            $aid = (string)($a['id'] ?? '');
-            $au = strtolower(trim((string)($a['username'] ?? '')));
-            $ae = strtolower(trim((string)($a['email'] ?? '')));
-            $match = ($sid !== '' && $aid === $sid) || $au === $user || ($ae !== '' && $ae === $user);
-            if (!$match) continue;
-            if (($a['active'] ?? true) === false) return null;
-            $cache = ['id' => $aid, 'user' => (string)($a['username'] ?? $s['user']),
-                'name' => (string)($a['name'] ?? ''), 'email' => (string)($a['email'] ?? '')];
-            return $cache;
+        $row = $sid !== '' ? bfs_admin_row_by_id($sid) : null;
+        if (!$row) {
+            // session may predate id storage — fall back to username/email
+            $row = bfs_admin_row_by_login((string)$s['user']);
         }
-    } catch (Throwable $e) { /* DB down -> treat as logged out */ }
-    return null;
+        if (!$row) return null;
+        $a = $row['item'];
+        if (($a['active'] ?? true) === false) { unset($_SESSION['admin']); return null; }
+        $cache = ['id' => (string)$a['id'], 'user' => (string)($a['username'] ?? $s['user']),
+            'name' => (string)($a['name'] ?? ''), 'email' => (string)($a['email'] ?? ''),
+            'role_id' => (string)($a['role_id'] ?? ''), 'perms' => bfs_admin_perms($a)];
+        return $cache;
+    } catch (Throwable $e) {
+        error_log('bfs_session_admin: ' . $e->getMessage());
+        return null;
+    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -555,90 +677,64 @@ function bfs_find_admin(array $state, $user) {
     return null;
 }
 
-// Column-based admin lookup — works even when the row's data JSON is missing
-// or was inserted directly into MySQL. Returns ['item'=>..., 'pass_hash'=>...].
-function bfs_admin_row_by_login(string $user): ?array {
-    $st = db()->prepare('SELECT id, username, name, email, active, protected, pass_hash, created_at, data FROM bfs_admins WHERE username = ? OR email = ? LIMIT 1');
-    $st->execute([$user, $user]);
-    $row = $st->fetch();
-    if (!$row) return null;
-    $item = bfs_jd($row['data'] ?? null);
-    if (!is_array($item)) $item = [];
-    // promoted columns are authoritative for identity fields
-    foreach (['id' => $row['id'], 'username' => $row['username'], 'name' => $row['name'],
-              'email' => $row['email'], 'active' => $row['active'], 'protected' => $row['protected'],
-              'createdAt' => $row['created_at']] as $k => $v) {
-        if ($v !== null && $v !== '') $item[$k] = $v;
-    }
-    $item['id'] = (string)$row['id'];
-    return ['item' => $item, 'pass_hash' => (string)($row['pass_hash'] ?? '')];
-}
-
-// Shared credential check. Returns the admin array on success (and upgrades
-// the stored hash), null on failure.
+// Shared credential check. Authenticates against the actual bfs_admins row
+// (username/email columns + pass_hash), checks active status, and only falls
+// back to the settings credentials when no account exists at all.
+// Returns the session admin array on success, null on bad credentials.
+// Throws on database failure so callers can return a proper 500.
 function bfs_attempt_login($user, $pass) {
+    $user = (string)$user; $pass = (string)$pass;
     try {
-        $state = bfs_state_load();
-    } catch (Throwable $e) {
-        return null;
-    }
-    $found = bfs_find_admin($state ?: [], $user);
-    $credId = '';
-    $ok = false;
-    if ($found && (($found['active'] ?? true) !== false)) {
-        $credId = (string)($found['id'] ?? '');
-        $cred = bfs_cred_row('bfs_admins', $credId);
-        $via = bfs_verify_cred($cred, (string)$pass);
-        if ($via) {
-            $ok = true;
-            try { bfs_upgrade_cred('bfs_admins', $credId, $cred, (string)$pass); } catch (Throwable $e) {}
+        bfs_ensure_roles_schema();
+        $row = bfs_admin_row_by_login($user);
+        if ($row) {
+            $a = $row['item'];
+            if (($a['active'] ?? true) === false) return null; // disabled
+            $cred = ['pass_hash' => $row['pass_hash'], 'item' => $a];
+            $via = bfs_verify_cred($cred, $pass);
+            if (!$via) return null; // wrong password — no settings fallback
+            try { bfs_upgrade_cred('bfs_admins', (string)$a['id'], $cred, $pass); } catch (Throwable $e) {}
+            $name = trim((string)($a['name'] ?? ''));
+            if ($name === '' || strtolower($name) === 'yard admin') $name = (string)($a['username'] ?? '');
+            session_regenerate_id(true);
+            $_SESSION['admin'] = [
+                'id' => (string)$a['id'],
+                'user' => (string)($a['username'] ?? ''),
+                'name' => $name,
+                'email' => (string)($a['email'] ?? ''),
+                'role_id' => (string)($a['role_id'] ?? ''),
+            ];
+            $_SESSION['admin']['perms'] = bfs_admin_perms($a);
+            return $_SESSION['admin'];
         }
-    }
-    // fallback: find the account by its columns even if the state copy missed it
-    if (!$ok) {
-        $row = bfs_admin_row_by_login((string)$user);
-        if ($row && (($row['item']['active'] ?? true) !== false)) {
-            $cred = ['pass_hash' => $row['pass_hash'], 'item' => $row['item']];
-            $via = bfs_verify_cred($cred, (string)$pass);
-            if ($via) {
-                $found = $row['item'];
-                $credId = (string)$row['item']['id'];
-                $ok = true;
-                try { bfs_upgrade_cred('bfs_admins', $credId, $cred, (string)$pass); } catch (Throwable $e) {}
-            }
-        }
-    }
-    if (!$ok && !$found) {
+        // no admins-table account — legacy settings credentials fallback
         $settings = bfs_load_settings(db());
         $su = (string)($settings['adminUser'] ?? '');
         $sp = (string)($settings['adminPass'] ?? '');
-        if ($su !== '' && $sp !== '' && hash_equals($su, (string)$user) && hash_equals($sp, (string)$pass)) {
-            $found = ['id' => '', 'username' => $su, 'name' => $su, 'email' => ''];
-            $ok = true;
+        if ($su !== '' && $sp !== '' && hash_equals($su, $user) && hash_equals($sp, $pass)) {
+            session_regenerate_id(true);
+            $_SESSION['admin'] = ['id' => '', 'user' => $su, 'name' => $su, 'email' => '', 'role_id' => '', 'perms' => ['*']];
+            return $_SESSION['admin'];
         }
+        return null;
+    } catch (Throwable $e) {
+        error_log('bfs_attempt_login: ' . $e->getMessage());
+        throw $e;
     }
-    if (!$ok) return null;
-    $name = trim((string)($found['name'] ?? ''));
-    if ($name === '' || strtolower($name) === 'yard admin') $name = (string)($found['username'] ?? '');
-    session_regenerate_id(true);
-    $_SESSION['admin'] = [
-        'id' => (string)($found['id'] ?? ''),
-        'user' => (string)($found['username'] ?? ''),
-        'name' => $name,
-        'email' => (string)($found['email'] ?? ''),
-    ];
-    return $_SESSION['admin'];
 }
 
 // Form-post login (static fallback): redirect like the old endpoint.
 function bfs_login($user, $pass): void {
-    if (bfs_attempt_login($user, $pass)) { header('Location: /admin/'); exit; }
+    try {
+        if (bfs_attempt_login($user, $pass)) { header('Location: /admin/'); exit; }
+    } catch (Throwable $e) { /* fall through to error redirect */ }
     header('Location: /admin/?e=1'); exit;
 }
 
-// JSON login for fetch() callers: reliable, no redirect sniffing.
-function bfs_login_api($user, $pass): bool {
-    return bfs_attempt_login($user, $pass) !== null;
+// JSON login for fetch() callers: returns the admin array or null.
+// Throws on server failure so the endpoint can return 500.
+function bfs_login_api($user, $pass): ?array {
+    return bfs_attempt_login($user, $pass);
 }
 
 
