@@ -228,7 +228,7 @@
         heroSub: "Barrier Builders is a Harare fencing yard: materials in stock, crews on the road, quotes that become invoices without retyping.",
         kicker: "Who we are",
         title: "Supply, install, document.",
-        body: "We fence farms, homes, schools, mines and commercial yards across all ten provinces. The public site is built around two jobs: helping a buyer see the bill of quantities, and helping the office turn that quote into a tax invoice and a tracked order.",
+        body: "We fence farms, homes, schools, mines and commercial yards across all ten provinces.",
         bullets: [
           "Hot-dip galvanized diamond mesh, game fence, clear view, palisade and razor wire",
           "Custom gates and post assemblies fabricated to opening width",
