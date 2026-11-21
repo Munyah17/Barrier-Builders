@@ -20,6 +20,43 @@
   },
   "products": [
     {
+      "id": "p1",
+      "slug": "diamond-mesh",
+      "name": "Diamond Mesh",
+      "category": "Residential",
+      "unit": "roll",
+      "short": "Versatile hot-dip galvanized chain-link for homes, schools and commercial plots.",
+      "description": "Our most requested fence. Woven diamond mesh in 2.0-4.0 mm gauges, apertures 50 / 63 / 75 mm, heights from 0.9 m to 2.4 m. Hot-dip galvanized for 15+ years of corrosion resistance in Zimbabwean conditions.",
+      "specs": {
+        "gauge": "2.0-4.0 mm",
+        "aperture": "50 / 63 / 75 mm",
+        "heights": "0.9-2.4 m",
+        "coating": "Hot-dip galvanized, min 80 um"
+      },
+      "pricePerM": 12,
+      "rollPrice": 120,
+      "rollMetres": 30,
+      "postPrice": 8,
+      "topWirePerM": 0.8,
+      "gatePrice": 180,
+      "installPerM": 3.5,
+      "concretePerPost": 4,
+      "stock": 420,
+      "stockUnit": "rolls",
+      "featured": true,
+      "image": "assets/img/diamond-mesh.jpg",
+      "keywords": [
+        "diamond",
+        "chain",
+        "residential",
+        "home",
+        "house",
+        "plot",
+        "school",
+        "boundary"
+      ]
+    },
+    {
       "id": "p2",
       "slug": "game-fence",
       "name": "Game Fence",

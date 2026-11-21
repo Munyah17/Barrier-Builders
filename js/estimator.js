@@ -76,14 +76,33 @@
     return { items, subtotal, vat: tax.vat, total: tax.total, p, input: { perimeter, corners, height, spacing, type: p.slug, typeName: p.name, options: opts } };
   }
 
+  /* Strong phrase signals per product — generic single keywords ("farm",
+     "school", "high") are too ambiguous to pick a fence type on their own. */
+  const FENCE_SYNONYMS = {
+    "diamond-mesh": ["diamond mesh", "diamond", "chain link", "chain-link", "kenya mesh", "factory mesh", "residential fence", "home fence", "boundary fence"],
+    "game-fence": ["game fence", "game", "wildlife", "conservancy", "ranch", "safari", "big game", "kudu", "eland", "buffalo", "livestock fence"],
+    "barbed-wire": ["barbed wire", "barbed", "barb wire", "strand wire", "cheap fence", "budget fence"],
+    "razor-wire": ["razor wire", "razor", "prison", "high security", "anti climb", "anti-climb", "burglar", "security fence", "commercial security"],
+    "clear-view": ["clear view", "clearview", "see through", "see-through", "transparent", "estate fence", "embassy", "villa", "residential security", "school fence"],
+    "palisade": ["palisade", "steel palisade", "industrial fence", "warehouse fence", "factory fence", "compound fence"],
+    "welded-mesh": ["welded mesh", "welded", "panel fence", "cage", "factory", "warehouse", "industrial mesh"],
+    "chicken-mesh": ["chicken", "poultry", "birds", "coop", "chook", "layer", "broiler", "poultry run", "chicken run"],
+    "field-fence": ["field fence", "cattle", "goats", "sheep", "crop", "rural", "small stock", "stock fence", "farm boundary"],
+    "electric-fence": ["electric fence", "electric", "energizer", "joule", "wall top", "hyper", "alarm fence", "electric netting"]
+  };
+
   function detectFenceType(text) {
-    const t = text.toLowerCase();
-    let best = fenceProducts()[0] || BFS.products()[0], bestScore = 0;
-    fenceProducts().forEach(p => {
+    const t = " " + text.toLowerCase() + " ";
+    const fp = fenceProducts();
+    let best = fp[0] || BFS.products()[0], bestScore = 0;
+    fp.forEach(p => {
       let score = 0;
-      (p.keywords || []).forEach(k => { if (t.includes(k)) score += 1; });
-      if (t.includes(p.name.toLowerCase())) score += 5;
-      if (t.includes(p.slug.replace("-", " "))) score += 3;
+      const name = p.name.toLowerCase();
+      if (t.includes(name)) score += 10;
+      const slugPhrase = p.slug.replace(/-/g, " ");
+      if (slugPhrase && t.includes(slugPhrase)) score += 6;
+      (FENCE_SYNONYMS[p.slug] || []).forEach(k => { if (t.includes(k)) score += 4; });
+      (p.keywords || []).forEach(k => { if (k && t.includes(k.toLowerCase())) score += 1; });
       if (score > bestScore) { bestScore = score; best = p; }
     });
     return best;
