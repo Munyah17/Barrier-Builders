@@ -1264,11 +1264,10 @@ function profile() {
 function bindProfile() {
   const af = document.getElementById("avatarFile");
   let avatarData = BFS.adminAuthed() ? BFS.adminAuthed().avatar : "";
-  if (af) af.onchange = () => {
+  if (af) af.onchange = async () => {
     const file = af.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => { avatarData = reader.result; };
-    reader.readAsDataURL(file);
+    try { avatarData = await BFS.fileToAvatarDataUrl(file); }
+    catch (e) { alert("Could not read that image."); }
   };
   const form = document.getElementById("pf2");
   if (form) form.onsubmit = async e => {

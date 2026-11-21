@@ -752,6 +752,25 @@
     export() { return JSON.stringify(state, null, 2); },
     import(json) { state = JSON.parse(json); save(state); },
     money, vatOn, uid, nextRef, isOwnerAdmin, adminLabel,
+    // Resize an image file to a small JPEG data URL — keeps avatars well
+    // under the 200 KB server-side limit that silently dropped big photos.
+    fileToAvatarDataUrl(file, maxDim = 400, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+          const cv = document.createElement("canvas");
+          cv.width = w; cv.height = h;
+          cv.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(cv.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("not a readable image")); };
+        img.src = url;
+      });
+    },
     asset(path) {
       if (!path) return "";
       if (path.startsWith("http")) return path;

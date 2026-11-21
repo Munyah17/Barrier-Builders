@@ -19,7 +19,7 @@
   <div class="container" style="max-width:960px" id="app"></div>
 </section>
 <div id="site-footer"></div>
-<script src="../js/store.js?v=17"></script>
+<script src="../js/store.js?v=18"></script>
 <script src="../js/ui.js?v=12"></script>
 <script>
 const app = document.getElementById("app");
@@ -216,11 +216,10 @@ function renderSettings() {
     </div></div>`);
   let avatarData = c.avatar || "";
   const av = document.getElementById("pavatar");
-  if (av) av.onchange = () => {
+  if (av) av.onchange = async () => {
     const file = av.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => { avatarData = reader.result; };
-    reader.readAsDataURL(file);
+    try { avatarData = await BFS.fileToAvatarDataUrl(file); }
+    catch (e) { BFSUI.toast("Could not read that image."); }
   };
   sf.onsubmit = async e => {
     e.preventDefault();
