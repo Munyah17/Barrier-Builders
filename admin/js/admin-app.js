@@ -352,73 +352,132 @@ function analytics() {
 
 /* ---------- inventory (products) ---------- */
 function products() {
+  const money = n => "$" + BFS.money(n);
+  const stockBadge = p => p.stock <= 0 ? badge("Out","bg-danger") : p.stock < 40 ? badge("Low","bg-warning") : badge("OK","bg-success");
   const rows = BFS.products().map(p => `<tr>
-    <td><strong>${esc(p.name)}</strong><div class="text-muted small">${esc(p.category)}</div></td>
-    <td>$${p.pricePerM.toFixed(2)}/m</td>
-    <td><input type="number" value="${p.stock}" data-id="${p.id}" class="form-control form-control-sm" style="width:90px"></td>
-    <td>${esc(p.stockUnit)}</td>
-    <td>${badge(p.stock<40?"Low":p.stock===0?"Out":"OK", p.stock<40?"bg-warning":p.stock===0?"bg-danger":"bg-success")}</td>
-    <td class="text-end"><button class="btn btn-sm btn-outline-primary" data-edit="${p.id}">Edit</button></td>
+    <td><strong>${esc(p.name)}</strong><div class="text-muted small">${esc(p.slug||"")}</div></td>
+    <td>${esc(p.category||"—")}</td>
+    <td>${money(p.pricePerM||0)}/m</td>
+    <td>${money(p.rollPrice||0)}</td>
+    <td>${p.rollMetres||"—"} m</td>
+    <td>${esc(p.unit||"—")}</td>
+    <td><input type="number" min="0" value="${p.stock}" data-id="${p.id}" class="form-control form-control-sm" style="width:80px"></td>
+    <td>${esc(p.stockUnit||"")}</td>
+    <td>${p.featured ? '<i class="fa-solid fa-star text-warning"></i>' : ""}</td>
+    <td>${stockBadge(p)}</td>
+    <td class="text-end text-nowrap">
+      <button class="btn btn-sm btn-outline-primary" data-edit="${p.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
+      <button class="btn btn-sm btn-outline-danger" data-pdel="${p.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+    </td>
   </tr>`).join("");
-  const expRows = BFS.products().map(p => [p.name, p.category, p.pricePerM, p.rollPrice, p.rollMetres, p.postPrice, p.stock, p.stockUnit, p.featured?"Yes":"No"]);
-  regExport("products", { filename:"inventory", title:"Inventory", headers:["Name","Category","Price/m","Roll price","Coverage m","Post price","Stock","Unit","Featured"], rows:expRows, subtitle:"Barrier Builders inventory" });
-  return shell("Inventory", mCard("Products","Manage stock and pricing", `<div id="exp-products">${tbl(th(["Product","Price","Stock","Unit","Status",""]), rows)}</div>`,
+  const expRows = BFS.products().map(p => [p.name, p.slug, p.category, p.pricePerM, p.rollPrice, p.rollMetres, p.postPrice, p.topWirePerM, p.gatePrice, p.installPerM, p.concretePerPost, p.stock, p.stockUnit, p.unit, p.featured?"Yes":"No", p.image]);
+  regExport("products", { filename:"inventory", title:"Inventory", headers:["Name","Slug","Category","Price/m","Roll price","Coverage m","Post price","Top wire/m","Gate price","Install/m","Concrete/post","Stock","Stock unit","Unit","Featured","Image"], rows:expRows, subtitle:"Barrier Builders inventory" });
+  return shell("Inventory", mCard("Products","Manage stock, pricing and catalogue details", `<div id="exp-products">${tbl(th(["Product","Category","Price","Roll","Cover","Unit","Stock","Stock unit","","Status","Actions"]), rows)}</div>`,
     `<div class="d-flex gap-2 flex-wrap">${importBtn(".csv,.xlsx", "products")}${exportMenu("products")}<button class="m-btn m-btn--primary" id="addP"><i class="fa-solid fa-plus"></i> Add product</button></div>`) + `<div id="editor" style="margin-top:16px"></div>`);
 }
 function productForm(p) {
-  p = p || { name:"", category:"Residential", slug:"", short:"", pricePerM:0, rollPrice:0, rollMetres:30, postPrice:0, stock:0, stockUnit:"rolls", image:"assets/img/diamond-mesh.jpg", featured:false };
-  const f = (label, inner, cls="col-md-6") => `<div class="${cls}"><label class="form-label">${label}</label>${inner}</div>`;
+  p = p || { name:"", category:"Residential", slug:"", unit:"roll", short:"", description:"", pricePerM:0, rollPrice:0, rollMetres:30, postPrice:0, topWirePerM:0, gatePrice:0, installPerM:0, concretePerPost:0, stock:0, stockUnit:"rolls", image:"", featured:false, keywords:[] };
+  const f = (label, inner, cls="col-md-4") => `<div class="${cls}"><label class="form-label">${label}</label>${inner}</div>`;
   const inp = (name, val, type="text", step="") => `<input name="${name}" type="${type}" ${step?`step="${step}"`:""} class="form-control" value="${esc(val ?? "")}">`;
+  const units = ["roll","panel","coil","kit","m","set","pc"];
   return `<section class="m-card"><header class="m-card__header"><div><h2 class="m-card__title">${p.id ? "Edit product" : "New product"}</h2></div></header>
   <form id="pf">
     <div class="row g-3">
       ${f("Name", inp("name", p.name), "col-md-6")}
       ${f("Slug", inp("slug", p.slug), "col-md-6")}
-      ${f("Category", inp("category", p.category), "col-md-6")}
-      ${f("Price / m", inp("pricePerM", p.pricePerM, "number", "0.01"), "col-md-6")}
-      ${f("Roll / panel price", inp("rollPrice", p.rollPrice, "number", "0.01"), "col-md-6")}
-      ${f("Coverage (m)", inp("rollMetres", p.rollMetres, "number"), "col-md-6")}
-      ${f("Post price", inp("postPrice", p.postPrice, "number", "0.01"), "col-md-6")}
-      ${f("Stock", inp("stock", p.stock, "number"), "col-md-6")}
-      ${f("Stock unit", inp("stockUnit", p.stockUnit), "col-md-6")}
-      ${f("Image path", inp("image", p.image), "col-md-6")}
+      ${f("Category", inp("category", p.category), "col-md-4")}
+      ${f("Unit", `<select name="unit" class="form-control">${units.map(u=>`<option value="${u}" ${p.unit===u?"selected":""}>${u}</option>`).join("")}</select>`, "col-md-4")}
+      ${f("Price / m", inp("pricePerM", p.pricePerM, "number", "0.01"), "col-md-4")}
+      ${f("Roll / panel price", inp("rollPrice", p.rollPrice, "number", "0.01"), "col-md-4")}
+      ${f("Coverage (m)", inp("rollMetres", p.rollMetres, "number"), "col-md-4")}
+      ${f("Post price", inp("postPrice", p.postPrice, "number", "0.01"), "col-md-4")}
+      ${f("Top wire / m", inp("topWirePerM", p.topWirePerM, "number", "0.01"), "col-md-4")}
+      ${f("Gate price", inp("gatePrice", p.gatePrice, "number", "0.01"), "col-md-4")}
+      ${f("Install / m", inp("installPerM", p.installPerM, "number", "0.01"), "col-md-4")}
+      ${f("Concrete / post", inp("concretePerPost", p.concretePerPost, "number", "0.01"), "col-md-4")}
+      ${f("Stock", inp("stock", p.stock, "number"), "col-md-4")}
+      ${f("Stock unit", inp("stockUnit", p.stockUnit), "col-md-4")}
+      ${f("Image path", inp("image", p.image), "col-md-8")}
+      ${f("Keywords (comma-separated, for AI estimator)", inp("keywords", (p.keywords||[]).join(", ")), "col-md-12")}
     </div>
-    <div class="mt-3"><label class="form-label">Short description</label><textarea name="short" class="form-control" rows="3">${esc(p.short||"")}</textarea></div>
+    <div class="mt-3"><label class="form-label">Short description</label><textarea name="short" class="form-control" rows="2">${esc(p.short||"")}</textarea></div>
+    <div class="mt-3"><label class="form-label">Full description</label><textarea name="description" class="form-control" rows="3">${esc(p.description||"")}</textarea></div>
     <div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="featured" id="pf-feat" ${p.featured?"checked":""}><label class="form-check-label" for="pf-feat">Featured on homepage</label></div>
-    <div class="d-flex gap-2 mt-3">
-      <button class="m-btn m-btn--primary" type="submit">Save</button>
+    <div class="d-flex gap-2 mt-3 align-items-center">
+      <button class="m-btn m-btn--primary" type="submit">Save product</button>
       <button class="m-btn m-btn--ghost" type="button" id="cancel">Cancel</button>
       ${p.id ? `<button class="btn btn-danger" type="button" id="del">Delete</button>` : ""}
+      <span class="text-muted small" id="pf-status"></span>
     </div>
   </form></section>`;
 }
 function bindProducts() {
-  document.querySelectorAll("input[data-id]").forEach(inp => inp.onchange = () => {
-    const p = BFS.product(inp.dataset.id); p.stock = +inp.value; BFS.saveProduct(p); render();
+  document.querySelectorAll("#exp-products input[data-id]").forEach(inp => inp.onchange = async () => {
+    const p = BFS.product(inp.dataset.id);
+    if (!p) return;
+    p.stock = Math.max(0, +inp.value || 0);
+    BFS.saveProduct(p);
+    const res = await BFS.syncNow().catch(() => ({ ok: false }));
+    notify(res && res.ok ? "Stock saved." : "Saved locally — server sync failed, will retry.");
+    render();
   });
-  document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openProduct(BFS.product(b.dataset.edit)));
+  document.querySelectorAll("#exp-products [data-edit]").forEach(b => b.onclick = () => openProduct(BFS.product(b.dataset.edit)));
+  document.querySelectorAll("#exp-products [data-pdel]").forEach(b => b.onclick = async () => {
+    const p = BFS.product(b.dataset.pdel);
+    if (!p) return;
+    if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    BFS.deleteProduct(p.id);
+    const res = await BFS.syncNow().catch(() => ({ ok: false }));
+    notify(res && res.ok ? "Product deleted." : "Deleted locally — server sync failed, will retry.");
+    render();
+  });
   const add = document.getElementById("addP");
   if (add) add.onclick = () => openProduct(null);
 }
-function openProduct(p) {
+async function openProduct(p) {
   const box = document.getElementById("editor");
   if (!box) return;
   showEditor(productForm(p));
   const cancelBtn = box.querySelector("#cancel");
   const form = box.querySelector("#pf");
   const delBtn = box.querySelector("#del");
+  const statusEl = box.querySelector("#pf-status");
   if (cancelBtn) cancelBtn.onclick = () => { box.innerHTML = ""; };
-  if (form) form.onsubmit = e => {
+  if (form) form.onsubmit = async e => {
     e.preventDefault();
     const fd = new FormData(form);
-    const next = Object.assign({}, p || { id: BFS.uid("p"), specs:{}, keywords:[], topWirePerM:0.8, gatePrice:180, installPerM:3.5, concretePerPost:4, description: fd.get("short") });
-    ["name","slug","category","image","short","stockUnit"].forEach(k => next[k] = fd.get(k));
-    ["pricePerM","rollPrice","rollMetres","postPrice","stock"].forEach(k => next[k] = Number(fd.get(k)));
+    const next = Object.assign({}, p || { id: BFS.uid("p"), specs:{}, keywords:[] });
+    ["name","slug","category","unit","image","short","description","stockUnit"].forEach(k => next[k] = fd.get(k));
+    ["pricePerM","rollPrice","rollMetres","postPrice","topWirePerM","gatePrice","installPerM","concretePerPost","stock"].forEach(k => next[k] = Number(fd.get(k)) || 0);
     next.featured = form.querySelector('[name="featured"]').checked;
+    next.keywords = String(fd.get("keywords") || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     if (!next.slug) next.slug = next.name.toLowerCase().replace(/\s+/g,"-");
-    BFS.saveProduct(next); location.hash = "#/products"; render();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    if (statusEl) statusEl.textContent = "Saving…";
+    try {
+      BFS.saveProduct(next);
+      const res = await BFS.syncNow().catch(() => ({ ok: false }));
+      if (res && res.ok) {
+        notify(p && p.id ? "Product updated." : "Product created.");
+        location.hash = "#/products"; render();
+      } else {
+        if (statusEl) statusEl.textContent = "Saved locally — server sync failed, will retry.";
+        notify("Product saved locally but server sync failed — check connection.");
+        submitBtn.disabled = false;
+      }
+    } catch (err) {
+      if (statusEl) statusEl.textContent = "Save failed: " + (err && err.message || err);
+      submitBtn.disabled = false;
+    }
   };
-  if (delBtn) delBtn.onclick = () => { if (confirm("Delete this product?")) { BFS.deleteProduct(p.id); render(); } };
+  if (delBtn) delBtn.onclick = async () => {
+    if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    BFS.deleteProduct(p.id);
+    const res = await BFS.syncNow().catch(() => ({ ok: false }));
+    notify(res && res.ok ? "Product deleted." : "Deleted locally — server sync failed, will retry.");
+    render();
+  };
 }
 
 /* ---------- promotions ---------- */
