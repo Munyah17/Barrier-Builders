@@ -194,8 +194,8 @@
       },
       hero: {
         image: "assets/img/hero-farm.jpg",
-        title: "Fencing that <em>holds the line</em> across Zimbabwe.",
-        subtitle: "Barrier Builders Fencing Solutions: manufacture, fix and supply all types of fences across Zimbabwe, distance is not a barrier. Get a bill of quantities in seconds, then convert it to an invoice with one click.",
+        title: "Strong. Secure. <em>Built to Last.</em>",
+        subtitle: "We design and install high-quality diamond mesh fencing, razor wire, gates and farm fencing across Harare and Zimbabwe. Get a bill of quantities in seconds, then convert it to an invoice with one click.",
         ctaPrimaryLabel: "Instant quote calculator", ctaPrimaryHref: "calculator",
         ctaSecondaryLabel: "Try the AI estimator", ctaSecondaryHref: "estimator"
       },
@@ -224,14 +224,15 @@
       },
       about: {
         heroImage: "assets/img/hero-farm.jpg",
-        heroTitle: "The fence that holds.",
-        heroSub: "Barrier Builders is a Harare fencing yard: materials in stock, crews on the road, quotes that become invoices without retyping.",
+        heroTitle: "Fencing done right, first time.",
+        heroSub: "Barrier Fencing is a trusted fencing company in Harare, Zimbabwe — diamond mesh, razor wire, barbed wire, gates and farm fencing for homes, businesses, schools and farms.",
         kicker: "Who we are",
-        title: "Supply, install, document.",
-        body: "We fence farms, homes, schools, mines and commercial yards across all ten provinces.",
+        title: "Strong fences. Neat finish. On-time delivery.",
+        body: "Barrier Fencing is a trusted fencing company based in Harare, Zimbabwe. We specialize in diamond mesh, razor wire, barbed wire, gates and farm fencing for homes, businesses, schools and farms across all ten provinces. From boundary walls to game ranches, every project gets the same treatment: quality materials, clean workmanship and a fair price. Our promise is simple — strong fences, neat finish, on-time delivery.",
         bullets: [
-          "Hot-dip galvanized diamond mesh, game fence, clear view, palisade and razor wire",
+          "Diamond mesh, game fence, clear view, palisade, razor wire and barbed wire — all in stock at our Harare yard",
           "Custom gates and post assemblies fabricated to opening width",
+          "Instant online quotes, then a tracked order from delivery to installation",
           "Diaspora orders with remote payment and WhatsApp progress photos"
         ],
         image: "assets/img/gallery-school.jpg",
@@ -249,7 +250,7 @@
         mapNote: "Visit us at the Harare yard, or request a site survey."
       },
       footer: {
-        brandText: "Supply and installation of galvanized fencing across all 10 provinces of Zimbabwe. Materials, labour, and nationwide delivery."
+        brandText: "Your trusted partner for secure fencing in Zimbabwe — diamond mesh, razor wire, gates and farm fencing, supplied and installed nationwide."
       },
       rules: {
         quote: "Quotations are valid for 14 days from the date of issue. Prices are in USD and include materials; installation and transport are quoted separately unless stated. A 50% deposit secures materials, balance due on completion or before dispatch for supply-only orders.",
