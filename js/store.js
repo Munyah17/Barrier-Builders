@@ -195,7 +195,7 @@
       hero: {
         image: "assets/img/hero-farm.jpg",
         title: "Fencing that <em>holds the line</em> across Zimbabwe.",
-        subtitle: "Diamond mesh, game fence, clear view, palisade and gates — supplied, quoted and installed. Get a bill of quantities in seconds, then convert it to an invoice with one click.",
+        subtitle: "Barrier Builders Fencing Solutions: manufacture, fix and supply all types of fences across Zimbabwe, distance is not a barrier. Get a bill of quantities in seconds, then convert it to an invoice with one click.",
         ctaPrimaryLabel: "Instant quote calculator", ctaPrimaryHref: "calculator",
         ctaSecondaryLabel: "Try the AI estimator", ctaSecondaryHref: "estimator"
       },
