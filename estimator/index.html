@@ -59,7 +59,7 @@
 </section>
 <div id="site-footer"></div>
 <script src="../js/store.js?v=16"></script>
-<script src="../js/estimator.js?v=4"></script>
+<script src="../js/estimator.js?v=5"></script>
 <script src="../js/ui.js?v=10"></script>
 <script>
 let current = null;
@@ -102,10 +102,28 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="hint" style="color:rgba(255,255,255,.65)">Indicative range</div>
           <div class="serif" style="font-size:24px;color:var(--gold)">$${current.low.toLocaleString()} – $${current.high.toLocaleString()}</div>
         </div>
-        <button class="btn btn-gold btn-block" id="toQuote">Save as quotation</button>
+        <div class="form-grid" style="margin:14px 0">
+          <div class="field"><label for="estName">Your name</label><input id="estName" placeholder="Full name"></div>
+          <div class="field"><label for="estContact">WhatsApp / phone</label><input id="estContact" placeholder="0771 234 567"></div>
+        </div>
+        <button class="btn btn-green btn-block" id="toAdmin" type="button">Send to admin for quotation</button>
+        <button class="btn btn-gold btn-block" id="toQuote" type="button" style="margin-top:8px">Save as quotation</button>
         <a class="btn btn-outline btn-block" style="margin-top:8px" href="../calculator?type=${current.product.slug}">Refine in calculator</a>`;
+      const estName = document.getElementById("estName");
+      const estContact = document.getElementById("estContact");
+      const cust = () => ({ name: (estName.value || "").trim() || "Website estimate", contact: (estContact.value || "").trim() || "via AI estimator", email: "", notes: text });
+      let sentQuote = null;
+      const saveOnce = (status) => {
+        if (sentQuote) { sentQuote.customer = cust(); sentQuote.status = status; return BFS.saveQuote(sentQuote); }
+        sentQuote = BFSEst.persistQuote(current, cust(), "ai-estimator", status);
+        return sentQuote;
+      };
+      document.getElementById("toAdmin").onclick = () => {
+        const q = saveOnce("draft");
+        BFSUI.toast("Sent to admin as draft quotation " + q.ref + " — they'll review and finalize it.");
+      };
       document.getElementById("toQuote").onclick = () => {
-        const q = BFSEst.persistQuote(current, { name: "Website estimate", contact: "via AI estimator", notes: text }, "ai");
+        const q = saveOnce("sent");
         location.href="../quote?ref=" + encodeURIComponent(q.ref);
       };
     }, 700);

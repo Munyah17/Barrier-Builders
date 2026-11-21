@@ -150,10 +150,10 @@
     return Object.assign({ product: p, low, high, prompt: text }, boq);
   }
 
-  function persistQuote(boq, customer, source) {
+  function persistQuote(boq, customer, source, status) {
     const q = {
       source: source || "calculator",
-      status: "sent",
+      status: status || "sent",
       customer: customer || { name: "Walk-in", contact: "", email: "", notes: "" },
       project: boq.input,
       options: boq.input.options,
