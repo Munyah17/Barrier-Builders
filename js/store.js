@@ -95,7 +95,7 @@
         description: "Knotted high-tensile game fence designed to contain large wildlife including kudu, eland and buffalo. Heights 1.2–2.4 m. Built for Matabeleland and Mashonaland ranch conditions.",
         specs: { gauge: "2.0–3.15 mm", joint: "Knotted, impact-resistant", heights: "1.2–2.4 m", coating: "Hot-dip galvanized" },
         pricePerM: 18, rollPrice: 280, rollMetres: 50, postPrice: 12, topWirePerM: 1.1, gatePrice: 220, installPerM: 4.0, concretePerPost: 5,
-        stock: 86, stockUnit: "rolls", featured: true, image: "assets/img/game-fence.jpg", keywords: ["game","wildlife","farm","hectare","ranch","livestock","conservancy"] },
+        stock: 86, stockUnit: "rolls", featured: true, image: "assets/img/game-fence-v2.jpg", keywords: ["game","wildlife","farm","hectare","ranch","livestock","conservancy"] },
       { id: "p3", slug: "barbed-wire", name: "Barbed Wire", category: "Security", unit: "roll",
         short: "High-tensile 2.5 mm barbed wire for farm boundaries and perimeter topping.",
         description: "12.5 gauge galvanized barbed wire, barb spacing 75–100 mm, 100 m and 200 m rolls. Used as a standalone farm fence or as a top strand on diamond mesh.",
@@ -165,7 +165,7 @@
     ],
     gallery: [
       { id: "g1", title: "Residential diamond mesh — Borrowdale", location: "Harare", type: "Diamond Mesh", image: "assets/img/gallery-residential.jpg", year: 2026 },
-      { id: "g2", title: "Game fence — Matabeleland conservancy", location: "Matabeleland South", type: "Game Fence", image: "assets/img/gallery-game.jpg", year: 2025 },
+      { id: "g2", title: "Game fence — Matabeleland conservancy", location: "Matabeleland South", type: "Game Fence", image: "assets/img/gallery-game-v2.jpg", year: 2025 },
       { id: "g3", title: "School palisade — sports field", location: "Harare", type: "Palisade", image: "assets/img/gallery-school.jpg", year: 2026 },
       { id: "g4", title: "Clear view estate perimeter", location: "Mount Pleasant", type: "Clear View", image: "assets/img/clear-view.jpg", year: 2026 },
       { id: "g5", title: "Farm boundary — Mashonaland East", location: "Marondera", type: "Field Fence", image: "assets/img/field-fence.jpg", year: 2025 },

@@ -44,7 +44,7 @@
       "stock": 86,
       "stockUnit": "rolls",
       "featured": true,
-      "image": "assets/img/game-fence.jpg",
+      "image": "assets/img/game-fence-v2.jpg",
       "keywords": [
         "game",
         "wildlife",
@@ -399,7 +399,7 @@
       "title": "Game fence — Matabeleland conservancy",
       "location": "Matabeleland South",
       "type": "Game Fence",
-      "image": "assets/img/gallery-game.jpg",
+      "image": "assets/img/gallery-game-v2.jpg",
       "year": 2025
     },
     {
