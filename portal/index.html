@@ -9,7 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/styles.css?v=6">
+  <script>try{var __t=localStorage.getItem("bfs-theme")||(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=__t}catch(e){}</script>
+  <link rel="stylesheet" href="../css/styles.css?v=7">
+
 </head>
 <body>
 <div id="site-header"></div>
@@ -18,7 +20,7 @@
 </section>
 <div id="site-footer"></div>
 <script src="../js/store.js?v=15"></script>
-<script src="../js/ui.js?v=8"></script>
+<script src="../js/ui.js?v=9"></script>
 <script>
 const app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -296,7 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
 .portal-auth-card img{filter:drop-shadow(0 4px 10px rgba(0,114,67,.25))}
 .portal-auth-card h2{font-family:Fraunces,serif;font-size:26px;color:var(--green-dark)}
 .portal-auth-card .field input{padding:13px 14px;border-radius:12px}
-.portal-auth-card .btn-gold{padding:14px;font-size:15px;border-radius:12px;box-shadow:0 8px 20px rgba(230,179,37,.4)}
+.portal-auth-card .btn-gold{padding:14px;font-size:15px;border-radius:12px;box-shadow:0 8px 20px rgba(0,114,67,.35)}
 
 .portal-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 6px;padding:6px;background:#fff;border:1px solid var(--border);border-radius:999px;width:max-content;max-width:100%;box-shadow:var(--shadow)}
 .portal-tab{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;transition:.18s}
@@ -313,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 .portal-kyc-banner{display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:14px;margin-bottom:18px;font-size:14px}
 .portal-kyc-banner.ok{background:var(--green-soft);border:1px solid var(--green-line);color:var(--green-dark)}
-.portal-kyc-banner.warn{background:var(--gold-soft);border:1px solid #EBD9A0;color:#7A5B06}
+.portal-kyc-banner.warn{background:var(--gold-soft);border:1px solid var(--border);color:var(--ink)}
 .portal-kyc-banner.bad{background:#FEE4E2;border:1px solid #F5C6C2;color:var(--danger)}
 
 .ntf{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:#fff;margin-bottom:10px}
@@ -321,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
 .ntf-ico svg{width:18px;height:18px}
 .ntf-order .ntf-ico{background:var(--green-soft);color:var(--green)}
 .ntf-kyc .ntf-ico{background:#E8F0FE;color:#1A56DB}
-.ntf-promo .ntf-ico{background:var(--gold-soft);color:#8A6508}
+.ntf-promo .ntf-ico{background:var(--gold-soft);color:var(--green-dark)}
 .ntf-hi .ntf-ico{background:var(--green-soft);color:var(--green)}
 .ntf-date{margin-left:auto;white-space:nowrap;font-size:12px;flex-shrink:0}
 
