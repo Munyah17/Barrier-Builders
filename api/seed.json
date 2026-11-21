@@ -7,7 +7,7 @@
     "salesEmail": "sales@barrierfencing.co.zw",
     "phone": "+263 77 132 0612",
     "whatsapp": "263771320612",
-    "address": "",
+    "address": "Along High Glen Road, Between Service Station and Roundabout.",
     "hours": "",
     "vatRate": 0,
     "currency": "USD",
@@ -15,7 +15,8 @@
     "adminUser": "munyah",
     "vatNumber": "VAT 10001234",
     "bank": "",
-    "adminPass": "griezmann17"
+    "adminPass": "griezmann17",
+    "phone2": "+263 71 675 5380"
   },
   "products": [
     {

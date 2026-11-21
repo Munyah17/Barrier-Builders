@@ -1105,6 +1105,7 @@ function settings() {
       ${f("Tagline", inp("tagline", s.tagline))}
       ${f("Email", inp("email", s.email, "email"))}
       ${f("Phone", inp("phone", s.phone))}
+      ${f("Phone 2", inp("phone2", s.phone2))}
       ${f("WhatsApp (263…)", inp("whatsapp", s.whatsapp))}
       ${f("Admin username", inp("adminUser", s.adminUser))}
       ${f("Admin password", inp("adminPass", s.adminPass, "password"))}

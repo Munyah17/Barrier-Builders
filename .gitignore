@@ -7,3 +7,5 @@ data/*.json
 node_modules/
 Barrier Demo*/
 *.zip
+
+admin/new/
