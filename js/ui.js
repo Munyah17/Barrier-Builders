@@ -110,7 +110,7 @@
               <div class="header-cta">
                 ${avatarHtml}
                 <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme"></button>
-                <a class="btn btn-gold btn-sm" href="${BASE}calculator">Get Quote</a>
+                <a class="btn btn-green btn-sm" href="${BASE}calculator">Get Quote</a>
               </div>
               <button class="menu-btn" id="menuBtn" aria-label="Menu">${icon("menu")}</button>
             </div>
