@@ -68,8 +68,12 @@ try {
         if (bfs_client_by_email($email)) out(['ok' => false, 'error' => 'An account with this email already exists.'], 409);
 
         $id = bfs_client_insert(['name' => $name, 'email' => $email, 'phone' => $phone], $pass);
-        session_regenerate_id(true);
-        $_SESSION[BFS_CLIENT_SESSION] = $id;
+        // Admin-created accounts pass nosession=1 so the admin's browser does
+        // not get signed in as the new client.
+        if (empty($in['nosession'])) {
+            session_regenerate_id(true);
+            $_SESSION[BFS_CLIENT_SESSION] = $id;
+        }
         $row = bfs_client_row($id);
         out(['ok' => true, 'client' => bfs_client_public($row['item'])]);
     }

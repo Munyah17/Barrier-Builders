@@ -194,7 +194,7 @@ $bfsSession = $me ? [
       </form>
     </div>
   </div>
-  <script src="../js/store.js?v=15"></script>
+  <script src="../js/store.js?v=16"></script>
   <script src="../js/estimator.js?v=4"></script>
   <script src="js/admin-utils.js?v=3"></script>
   <script src="js/vanilla-utils.js?v=3"></script>
@@ -202,6 +202,6 @@ $bfsSession = $me ? [
   <script src="js/bootstrap5-init.js?v=3"></script>
   <script src="js/main-vanilla.js?v=4"></script>
   <script src="vendor/chartjs/chart.umd.js-4.5.1.min.js"></script>
-<script src="js/admin-app.js?v=22"></script>
+<script src="js/admin-app.js?v=23"></script>
 </body>
 </html>

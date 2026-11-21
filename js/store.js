@@ -622,10 +622,19 @@
     },
     // Server-backed registration — resolves with the new client (already
     // signed in via a server session) or rejects with an Error.
-    registerClient(p) {
-      return clientApi({ action: "register", name: p.name, email: p.email, phone: p.phone, password: p.password })
+    registerClient(p, opts) {
+      const body = { action: "register", name: p.name, email: p.email, phone: p.phone, password: p.password };
+      if (opts && opts.nosession) body.nosession = 1;
+      return clientApi(body)
         .then(j => {
           if (!j.ok || !j.client) throw new Error(j.error || "Registration failed");
+          if (opts && opts.nosession) {
+            const i = state.clients.findIndex(x => x.id === j.client.id);
+            if (i >= 0) state.clients[i] = Object.assign({}, state.clients[i], j.client);
+            else state.clients.push(j.client);
+            save(state, { localOnly: true });
+            return j.client;
+          }
           return adoptClient(j.client);
         });
     },

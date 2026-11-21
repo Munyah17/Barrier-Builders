@@ -450,6 +450,15 @@
       "active": true,
       "protected": true,
       "createdAt": "2026-11-06T00:00:00.000Z"
+    },
+    {
+      "id": "ad-2",
+      "username": "manager",
+      "name": "Site Manager",
+      "email": "manager@barrierfencing.co.zw",
+      "password": "bWFuYWdlcjIwMjY=",
+      "active": true,
+      "createdAt": "2026-11-21T00:00:00.000Z"
     }
   ],
   "analytics": {

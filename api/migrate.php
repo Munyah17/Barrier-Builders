@@ -42,14 +42,9 @@ if (!$has) {
     out('Schema already present.');
 }
 
-// 1b. Column upgrades for databases created before pass_hash existed ---------
-foreach (['bfs_admins', 'bfs_clients'] as $tbl) {
-    $hasCol = $pdo->query("SHOW COLUMNS FROM `$tbl` LIKE 'pass_hash'")->fetchColumn();
-    if (!$hasCol) {
-        $pdo->exec("ALTER TABLE `$tbl` ADD COLUMN pass_hash VARCHAR(255) NULL");
-        out("Added pass_hash column to $tbl.");
-    }
-}
+// 1b. Column reconciliation for databases created before pass_hash/roles ---
+bfs_ensure_schema_columns();
+out('Column check complete.');
 
 // 1c. Roles & permissions schema (idempotent) -------------------------------
 bfs_ensure_roles_schema();

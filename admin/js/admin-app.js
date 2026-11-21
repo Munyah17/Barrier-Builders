@@ -899,7 +899,7 @@ function openClient(c) {
         if (fd.get("password")) c.password = btoa(unescape(encodeURIComponent(fd.get("password"))));
         BFS.saveClient(c);
       } else {
-        await BFS.registerClient({ name: fd.get("name"), email: fd.get("email"), phone: fd.get("phone"), password: fd.get("password") });
+        await BFS.registerClient({ name: fd.get("name"), email: fd.get("email"), phone: fd.get("phone"), password: fd.get("password") }, { nosession: true });
         const nc = BFS.clientByEmail(fd.get("email")); if (nc) { nc.active = form.querySelector('[name="active"]').checked; BFS.saveClient(nc); }
       }
       if (!(await awaitSync())) return;
@@ -1625,7 +1625,7 @@ async function handleImport(kind, file) {
       map.rows.forEach(r => {
         const o = {}; map.headers.forEach((h,i)=>o[h]=r[i]);
         if (!o.email) return;
-        try { Promise.resolve(BFS.registerClient({ name:o.name||o.email, email:o.email, phone:o.phone||"", password:"imported"+Date.now() })).then(()=>count++).catch(()=>{}); } catch(e){}
+        try { Promise.resolve(BFS.registerClient({ name:o.name||o.email, email:o.email, phone:o.phone||"", password:"imported"+Date.now() }, { nosession: true })).then(()=>count++).catch(()=>{}); } catch(e){}
       });
     }
     alert("Imported " + count + " record(s).");

@@ -523,6 +523,50 @@ function bfs_all_permissions(): array {
 }
 
 // Idempotent schema ensure for roles — safe to call from any endpoint.
+// Expected column definitions per table (must match api/install.sql).
+// Used by migrate.php to bring drifted databases up to date.
+function bfs_schema_columns(): array {
+    $id   = 'VARCHAR(64) NOT NULL';
+    $so   = 'INT NOT NULL DEFAULT 0';
+    $data = 'MEDIUMTEXT NULL';
+    return [
+        'bfs_settings'    => ['k' => 'VARCHAR(64) NOT NULL', 'v' => 'MEDIUMTEXT NULL'],
+        'bfs_meta'        => ['k' => 'VARCHAR(64) NOT NULL', 'v' => 'VARCHAR(255) NULL'],
+        'bfs_products'    => ['id'=>$id,'sort_order'=>$so,'slug'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','name'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','category'=>'VARCHAR(120) NOT NULL DEFAULT \'\'','unit'=>'VARCHAR(40) NOT NULL DEFAULT \'\'','featured'=>'TINYINT(1) NOT NULL DEFAULT 0','price_per_m'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','stock'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','stock_unit'=>'VARCHAR(40) NOT NULL DEFAULT \'\'','image'=>'VARCHAR(255) NOT NULL DEFAULT \'\'','data'=>$data],
+        'bfs_promotions'  => ['id'=>$id,'sort_order'=>$so,'title'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','active'=>'TINYINT(1) NOT NULL DEFAULT 1','tag'=>'VARCHAR(80) NOT NULL DEFAULT \'\'','starts'=>'VARCHAR(40) NULL','ends'=>'VARCHAR(40) NULL','data'=>$data],
+        'bfs_gallery'     => ['id'=>$id,'sort_order'=>$so,'title'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','type'=>'VARCHAR(80) NOT NULL DEFAULT \'\'','location'=>'VARCHAR(120) NOT NULL DEFAULT \'\'','image'=>'VARCHAR(255) NOT NULL DEFAULT \'\'','year'=>'INT NULL','data'=>$data],
+        'bfs_quotes'      => ['id'=>$id,'sort_order'=>$so,'ref'=>'VARCHAR(60) NOT NULL DEFAULT \'\'','created_at'=>'VARCHAR(40) NULL','status'=>'VARCHAR(40) NOT NULL DEFAULT \'sent\'','source'=>'VARCHAR(40) NOT NULL DEFAULT \'\'','invoice_ref'=>'VARCHAR(60) NULL','subtotal'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','vat'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','total'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','data'=>$data],
+        'bfs_invoices'    => ['id'=>$id,'sort_order'=>$so,'ref'=>'VARCHAR(60) NOT NULL DEFAULT \'\'','quote_ref'=>'VARCHAR(60) NULL','quote_id'=>'VARCHAR(64) NULL','lead_id'=>'VARCHAR(64) NULL','created_at'=>'VARCHAR(40) NULL','due_at'=>'VARCHAR(40) NULL','status'=>'VARCHAR(40) NOT NULL DEFAULT \'unpaid\'','subtotal'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','vat'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','total'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','paid'=>'DECIMAL(14,2) NOT NULL DEFAULT 0','tracking'=>'VARCHAR(60) NULL','data'=>$data],
+        'bfs_orders'      => ['id'=>$id,'sort_order'=>$so,'tracking'=>'VARCHAR(60) NOT NULL DEFAULT \'\'','invoice_ref'=>'VARCHAR(60) NULL','quote_ref'=>'VARCHAR(60) NULL','created_at'=>'VARCHAR(40) NULL','status'=>'VARCHAR(40) NOT NULL DEFAULT \'pending\'','data'=>$data],
+        'bfs_contacts'    => ['id'=>$id,'sort_order'=>$so,'created_at'=>'VARCHAR(40) NULL','name'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','contact'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','data'=>$data],
+        'bfs_leads'       => ['id'=>$id,'sort_order'=>$so,'created_at'=>'VARCHAR(40) NULL','status'=>'VARCHAR(40) NOT NULL DEFAULT \'new\'','type'=>'VARCHAR(40) NOT NULL DEFAULT \'\'','name'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','email'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','contact'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','title'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','estimate'=>'DECIMAL(14,2) NULL','data'=>$data],
+        'bfs_clients'     => ['id'=>$id,'sort_order'=>$so,'name'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','email'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','phone'=>'VARCHAR(60) NOT NULL DEFAULT \'\'','active'=>'TINYINT(1) NOT NULL DEFAULT 1','pass_hash'=>'VARCHAR(255) NULL','created_at'=>'VARCHAR(40) NULL','data'=>$data],
+        'bfs_roles'       => ['id'=>$id,'sort_order'=>$so,'name'=>'VARCHAR(120) NOT NULL DEFAULT \'\'','permissions'=>'MEDIUMTEXT NULL','data'=>$data],
+        'bfs_admins'      => ['id'=>$id,'sort_order'=>$so,'username'=>'VARCHAR(120) NOT NULL DEFAULT \'\'','name'=>'VARCHAR(120) NOT NULL DEFAULT \'\'','email'=>'VARCHAR(190) NOT NULL DEFAULT \'\'','password'=>'VARCHAR(255) NULL','pass_hash'=>'VARCHAR(255) NULL','active'=>'TINYINT(1) NOT NULL DEFAULT 1','protected'=>'TINYINT(1) NOT NULL DEFAULT 0','role_id'=>'VARCHAR(64) NULL','created_at'=>'VARCHAR(40) NULL','data'=>$data],
+        'bfs_content'     => ['section'=>'VARCHAR(80) NOT NULL','sort_order'=>$so,'data'=>$data],
+        'bfs_analytics_pages'  => ['page'=>'VARCHAR(120) NOT NULL','views'=>'INT UNSIGNED NOT NULL DEFAULT 0'],
+        'bfs_analytics_daily'  => ['day'=>'VARCHAR(10) NOT NULL','views'=>'INT UNSIGNED NOT NULL DEFAULT 0','quotes'=>'INT UNSIGNED NOT NULL DEFAULT 0','invoices'=>'INT UNSIGNED NOT NULL DEFAULT 0'],
+        'bfs_analytics_events' => ['id'=>'INT UNSIGNED NOT NULL AUTO_INCREMENT','kind'=>'VARCHAR(40) NOT NULL DEFAULT \'\'','at'=>'VARCHAR(40) NULL'],
+        'bfs_sync_log'    => ['id'=>'INT UNSIGNED NOT NULL AUTO_INCREMENT','action'=>'VARCHAR(20) NOT NULL','bytes'=>'INT UNSIGNED NOT NULL DEFAULT 0','created_at'=>'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP'],
+    ];
+}
+
+// ALTER any table that is missing expected columns (idempotent, safe to re-run).
+function bfs_ensure_schema_columns(): void {
+    $pdo = db();
+    foreach (bfs_schema_columns() as $table => $cols) {
+        try {
+            $have = [];
+            foreach ($pdo->query("SHOW COLUMNS FROM `$table`") as $c) $have[$c['Field']] = true;
+        } catch (Throwable $e) { continue; } // table doesn't exist yet — install.sql creates it
+        foreach ($cols as $col => $def) {
+            if (!isset($have[$col])) {
+                try { $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$col` $def"); } catch (Throwable $e) {}
+            }
+        }
+    }
+}
+
 function bfs_ensure_roles_schema(): void {
     static $done = false;
     if ($done) return;
