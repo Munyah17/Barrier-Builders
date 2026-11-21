@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project | Barrier Builders</title>
+  <meta name="description" content="Completed fencing project — fence type, materials, design justification and cost.">
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>try{var __t=localStorage.getItem("bfs-theme")||(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=__t}catch(e){}</script>
+  <link rel="stylesheet" href="../css/styles.css?v=7">
+
+</head>
+<body>
+<div id="site-header"></div>
+<section class="page-hero" id="hero" style="background-image:url('../assets/img/hero-farm.jpg')">
+  <div class="container">
+    <div class="crumbs"><a href="../index">Home</a> <span class="sep">›</span> <a href="../projects">Projects</a> <span class="sep">›</span> <span id="crumbTitle">Project</span></div>
+    <h1 id="pTitle">Project</h1>
+    <p id="pSub"></p>
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    <div id="missing" class="panel" style="display:none;padding:30px;text-align:center">
+      <h2>Project not found</h2>
+      <p class="hint">This project may have been removed.</p>
+      <a class="btn btn-green" href="../projects">Back to projects</a>
+    </div>
+    <div id="content" style="display:none">
+      <div class="split" style="grid-template-columns:1.2fr .8fr;gap:28px;align-items:start">
+        <div>
+          <img id="pImg" src="" alt="" style="width:100%;border-radius:16px;object-fit:cover;max-height:480px">
+          <div class="kicker" style="margin-top:26px">Design justification</div>
+          <p id="pJust" style="margin-top:8px;line-height:1.8"></p>
+          <div class="kicker" style="margin-top:22px">Materials / solution</div>
+          <p id="pMat" style="margin-top:8px;line-height:1.8"></p>
+        </div>
+        <aside class="panel">
+          <div class="panel-head"><div><h2>Project details</h2></div></div>
+          <div class="panel-body" id="pFacts" style="line-height:2"></div>
+          <div style="padding:0 22px 22px">
+            <a class="btn btn-green btn-block" href="../quote">Request a similar quote</a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+<div id="site-footer"></div>
+<script src="../js/store.js?v=17"></script>
+<script src="../js/ui.js?v=12"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const esc = s => String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+  const id = new URLSearchParams(location.search).get("id");
+  const g = BFS.gallery().find(x => x.id === id);
+  if (!g) { missing.style.display = "block"; return; }
+  const area = g.areaType || g.type || "";
+  const fence = g.fenceType || "";
+  document.title = g.title + " | Barrier Builders";
+  document.getElementById("hero").style.backgroundImage = `url('${BFS.asset(g.image)}')`;
+  document.getElementById("crumbTitle").textContent = g.title;
+  document.getElementById("pTitle").textContent = g.title;
+  document.getElementById("pSub").textContent = [g.location, g.year, area].filter(Boolean).join(" · ");
+  document.getElementById("content").style.display = "block";
+  const img = document.getElementById("pImg");
+  img.src = BFS.asset(g.image); img.alt = g.title;
+  document.getElementById("pJust").textContent = g.justification || "Details available on request — contact us for the full project specification.";
+  document.getElementById("pMat").textContent = g.materials || "Contact us for the materials schedule on this project.";
+  const facts = [
+    ["Location", g.location], ["Area fenced", area], ["Fence type", fence],
+    ["Year", g.year], ["Project cost", g.cost ? "$" + BFS.money(g.cost) : ""]
+  ].filter(r => r[1]);
+  document.getElementById("pFacts").innerHTML = facts.map(r =>
+    `<div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line,#e4e7ec);padding:8px 0"><span class="hint">${esc(r[0])}</span><strong>${esc(r[1])}</strong></div>`).join("");
+});
+</script>
+</body>
+</html>

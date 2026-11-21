@@ -74,7 +74,7 @@ $bfsSession = $me ? [
             <li><a href="#/orders"><i class="fa-solid fa-truck-fast"></i>Orders</a></li>
             <li><a href="#/products"><i class="fa-solid fa-boxes-stacked"></i>Inventory</a></li>
             <li><a href="#/promotions"><i class="fa-solid fa-tags"></i>Promotions</a></li>
-            <li><a href="#/gallery"><i class="fa-solid fa-images"></i>Gallery</a></li>
+            <li><a href="#/gallery"><i class="fa-solid fa-images"></i>Projects</a></li>
             <li><a href="#/content"><i class="fa-solid fa-pen-to-square"></i>Content</a></li>
             <li><a href="#/messages"><i class="fa-solid fa-envelope"></i>Messages</a></li>
             <li><a href="#/clients"><i class="fa-solid fa-users"></i>Clients</a></li>
@@ -119,7 +119,7 @@ $bfsSession = $me ? [
               <ul class="list-unstyled navbar__sub-list js-sub-list">
                 <li><a href="#/products" data-nav="products">Inventory</a></li>
                 <li><a href="#/promotions" data-nav="promotions">Promotions</a></li>
-                <li><a href="#/gallery" data-nav="gallery">Gallery</a></li>
+                <li><a href="#/gallery" data-nav="gallery">Projects</a></li>
                 <li><a href="#/content" data-nav="content">Content</a></li>
               </ul>
             </li>

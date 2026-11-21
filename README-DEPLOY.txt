@@ -7,33 +7,30 @@ WHAT'S IN THIS PACKAGE
   index.html, css/, js/, assets/, api/, admin/, portal/ ...
   (all public pages, admin panel, client portal, API)
 
-  api/config.php   - database credentials (EDIT BEFORE UPLOAD)
-  api/install.sql  - full database schema
-  api/seed.json    - starter content + TWO admin accounts
-  api/migrate.php  - creates schema + seeds the database (run once)
+  api/config.php   - database credentials (already set — verify)
+  api/install.sql  - FULL database: schema + all seed data
+                     (products, content, settings, admin accounts)
+  api/schema.sql   - schema source used to build install.sql
+
+  Database (already configured in api/config.php):
+      DB name : barrierco_db
+      DB user : barrierco_munyah
+      DB pass : griezmann17
+      DB host : 127.0.0.1  (localhost on cPanel)
 
 
 STEP 1 — CREATE THE DATABASE (cPanel)
 -------------------------------------
   1. cPanel -> "MySQL Databases"
-  2. Create a database, e.g.  barrierco_newdb
-  3. Create a user, e.g.         barrierco_newdb
-     with a strong password
+  2. Create database:   barrierco_db
+  3. Create user:       barrierco_munyah
+     with password:     griezmann17
   4. "Add User To Database" -> select BOTH -> ALL PRIVILEGES
-  5. Write down: DB name, DB user, DB password
+  5. (Optional but recommended: change the DB password afterwards
+     and update api/config.php to match)
 
 
-STEP 2 — EDIT api/config.php
-----------------------------
-  Open api/config.php and set:
-
-      DB_NAME  = 'your_db_name'
-      DB_USER  = 'your_db_user'
-      DB_PASS  = 'your_db_password'
-      DB_HOST  = 'localhost'        (leave as-is on cPanel)
-
-
-STEP 3 — UPLOAD FILES
+STEP 2 — UPLOAD FILES
 ---------------------
   Option A (recommended):
     - Compress this whole folder to a .zip
@@ -47,34 +44,42 @@ STEP 3 — UPLOAD FILES
   (File Manager -> Settings -> tick "Show Hidden Files")
 
 
-STEP 4 — BUILD THE DATABASE
-----------------------------
-  Visit once in your browser:
+STEP 3 — IMPORT THE DATABASE (phpMyAdmin)
+------------------------------------------
+  1. cPanel -> "phpMyAdmin"
+  2. Select database: barrierco_db  (left sidebar)
+  3. Click the "Import" tab
+  4. Choose file: api/install.sql  (from this package)
+  5. Format: SQL -> click "Import" at the bottom
+  6. You should see ~90+ successful queries, no errors.
 
-      https://yourdomain.com/api/migrate.php?go=1
-
-  You should see "Schema created." / "Migrated state from
-  api/seed.json." — this creates ALL tables and loads content.
-
-  REBUILD / RESET (wipes all site data back to seed):
-      https://yourdomain.com/api/migrate.php?go=1&force=1
-
-  SECURITY: after a successful install, DELETE these two files
-  from the server (they are public):
-      api/migrate.php
-      api/seed.json
+  install.sql DROPS and recreates every bfs_* table, then loads
+  all products, page content, settings and the two admin accounts.
+  It is safe to re-run any time you want a full reset.
 
 
-STEP 5 — LOG IN
+STEP 4 — VERIFY
 ---------------
-  Admin panel:   https://yourdomain.com/admin/
-  Client portal: https://yourdomain.com/portal/
+  Admin panel:   https://barrierfencing.co.zw/admin/
+  Client portal: https://barrierfencing.co.zw/portal/
 
-  DEFAULT ADMIN ACCOUNTS (change passwords immediately!):
+  ADMIN ACCOUNTS (change passwords immediately after first login!):
     1) username: munyah    password: griezmann17
     2) username: manager   password: manager2026
 
   To change an admin password: Admin -> Admins -> edit account.
+  New admins created in Admin -> Admins can log in immediately —
+  accounts are stored server-side with hashed passwords.
+
+
+STEP 5 — CLEAN UP (recommended)
+-------------------------------
+  After a successful import, you may DELETE these files from the
+  server (they are development tools, not needed at runtime):
+      api/migrate.php
+      api/seed.json
+      api/schema.sql
+      api/_gen_install.php
 
 
 TROUBLESHOOTING
@@ -82,11 +87,14 @@ TROUBLESHOOTING
   * White page / 500 error
       -> api/config.php credentials wrong, or PHP PDO MySQL
          extension missing (ask host / enable in cPanel)
-  * "Access denied" on migrate.php
-      -> DB user not added to the database, or wrong password
+  * phpMyAdmin import fails
+      -> database barrierco_db does not exist yet (Step 1),
+         or the SQL file was truncated during upload — re-upload
   * Login says invalid_credentials
-      -> wrong username/password; or DB was seeded from an old
-         backup — rebuild with migrate.php?go=1&force=1
+      -> import did not complete; re-run install.sql in phpMyAdmin
+  * "Access denied for user" in PHP
+      -> DB user not added to barrierco_db, or wrong password —
+         check Step 1.4 (ALL PRIVILEGES)
   * Pages look unstyled
       -> css/ folder missing or .htaccess blocking it; hard-refresh
          (Ctrl+F5) to bust cached CSS/JS

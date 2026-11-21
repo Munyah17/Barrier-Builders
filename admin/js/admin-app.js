@@ -765,95 +765,154 @@ function bindOrders() {
   document.querySelectorAll("[data-odel]").forEach(b => b.onclick = () => { if(confirm("Delete this order?")){ BFS.deleteOrder(b.dataset.odel); render(); } });
 }
 
-/* ---------- gallery ---------- */
+/* ---------- projects (formerly gallery) ---------- */
+const AREA_TYPES = ["Home / Residential","Shop / Business","School","Farm / Ranch","Plot / Boundary","Warehouse / Industrial","Church / Institution","Other"];
+function projectArea(g) { return g.areaType || g.type || ""; }
+function projectFence(g) { return g.fenceType || ""; }
+
+// Downscale + recompress images client-side before upload — phone photos
+// routinely exceed cPanel's PHP upload limits and previously failed silently.
+function fileToResized(file, maxDim = 1600, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+      const cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      cv.toBlob(b => b ? resolve(b) : reject(new Error("could not encode image")), "image/jpeg", quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("not a readable image")); };
+    img.src = url;
+  });
+}
+async function uploadProjectImage(file) {
+  const blob = await fileToResized(file);
+  const fd = new FormData();
+  fd.append("file", blob, "project.jpg");
+  const res = await fetch("../api/upload.php", { method: "POST", body: fd });
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error || "upload failed");
+  return j.path;
+}
+
 function gallery() {
   const cards = BFS.gallery().map(g => `<div class="d-flex gap-3 align-items-center py-3 border-bottom">
     <img src="${BFS.asset(g.image)}" alt="" width="96" height="72" style="object-fit:cover;border-radius:8px">
-    <div style="flex:1"><strong>${esc(g.title)}</strong><div class="text-muted small">${esc(g.location)} · ${esc(g.type)} · ${g.year}</div></div>
+    <div style="flex:1"><strong>${esc(g.title)}</strong>
+      <div class="text-muted small">${esc(g.location||"")}${projectArea(g)?" · "+esc(projectArea(g)):""}${projectFence(g)?" · "+esc(projectFence(g)):""}${g.year?" · "+g.year:""}${g.cost?" · $"+BFS.money(g.cost):""}</div></div>
     <div class="d-flex gap-2">
+      <a class="btn btn-sm btn-outline-secondary" href="../project/?id=${encodeURIComponent(g.id)}" target="_blank" title="View page"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
       <button class="btn btn-sm btn-outline-secondary" data-edit="${g.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
       <label class="btn btn-sm btn-outline-primary" title="Replace image" style="cursor:pointer;margin:0"><i class="fa-solid fa-image"></i><input type="file" accept="image/*" data-replace="${g.id}" style="display:none"></label>
-      <button class="btn btn-sm btn-outline-danger" data-del="${g.id}" title="Remove"><i class="fa-solid fa-trash"></i></button>
+      <button class="btn btn-sm btn-outline-danger" data-del="${g.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
     </div>
   </div>`).join("");
-  return shell("Gallery", mCard("Gallery","Project photos — add, edit and replace images", cards || `<p class="text-muted mb-0">No photos yet.</p>`, `<button class="m-btn m-btn--primary" id="addG"><i class="fa-solid fa-plus"></i> Add photo</button>`) + `<div id="editor" style="margin-top:16px"></div>`);
+  return shell("Projects", mCard("Projects","Completed fencing jobs — full control over every project page", cards || `<p class="text-muted mb-0">No projects yet.</p>`, `<button class="m-btn m-btn--primary" id="addG"><i class="fa-solid fa-plus"></i> Add project</button>`) + `<div id="editor" style="margin-top:16px"></div>`);
 }
 function galleryForm(g) {
   g = g || {};
   const uid = "gimg_" + (g.id || "new");
+  const fenceOpts = [...new Set(BFS.products().map(p => p.name))];
+  const sel = (name, val, opts, cls="col-md-4") => `<div class="${cls}"><label class="form-label">${name}</label><select name="${name.toLowerCase().replace(/\s+/g,"_")}" class="form-control">${opts.map(o=>`<option value="${esc(o)}" ${val===o?"selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
   return `<form id="gform" class="m-card" style="padding:18px">
     <input type="hidden" name="_id" value="${esc(g.id||"")}">
-    <h3 class="m-card__title" style="margin-bottom:12px">${g.id ? "Edit photo" : "Add photo"}</h3>
+    <h3 class="m-card__title" style="margin-bottom:12px">${g.id ? "Edit project" : "Add project"}</h3>
     <div class="row g-3">
-      <div class="col-md-6"><label class="form-label">Caption</label><input name="title" class="form-control" value="${esc(g.title||"")}" required></div>
-      <div class="col-md-3"><label class="form-label">Location</label><input name="location" class="form-control" value="${esc(g.location||"")}"></div>
-      <div class="col-md-3"><label class="form-label">Type</label><input name="type" class="form-control" value="${esc(g.type||"")}"></div>
+      <div class="col-md-6"><label class="form-label">Project title</label><input name="title" class="form-control" value="${esc(g.title||"")}" required placeholder="e.g. Borrowdale residence — diamond mesh perimeter"></div>
+      <div class="col-md-3"><label class="form-label">Location (town/city)</label><input name="location" class="form-control" value="${esc(g.location||"")}" placeholder="Harare"></div>
       <div class="col-md-3"><label class="form-label">Year</label><input name="year" type="number" class="form-control" value="${g.year||new Date().getFullYear()}"></div>
+      <div class="col-md-4"><label class="form-label">Area being fenced</label><select name="areaType" class="form-control">${AREA_TYPES.map(o=>`<option value="${esc(o)}" ${projectArea(g)===o?"selected":""}>${esc(o)}</option>`).join("")}<option value="${esc(projectArea(g))}" ${projectArea(g)&&!AREA_TYPES.includes(projectArea(g))?"selected":""} hidden>${esc(projectArea(g))}</option></select></div>
+      <div class="col-md-4"><label class="form-label">Fence type used</label><input name="fenceType" class="form-control" value="${esc(projectFence(g))}" list="fenceTypes" placeholder="Diamond Mesh"><datalist id="fenceTypes">${fenceOpts.map(n=>`<option value="${esc(n)}">`).join("")}</datalist></div>
+      <div class="col-md-4"><label class="form-label">Project cost (USD)</label><input name="cost" type="number" step="0.01" class="form-control" value="${g.cost??""}" placeholder="0.00"></div>
       <div class="col-12">
-        <label class="form-label">Image</label>
+        <label class="form-label">Cover image</label>
         <div class="d-flex gap-2 align-items-start flex-wrap">
           <input name="image" type="text" class="form-control" style="max-width:420px" value="${esc(g.image||"")}" placeholder="assets/img/... or assets/uploads/...">
           <label class="m-btn m-btn--ghost" style="cursor:pointer;white-space:nowrap"><i class="fa-solid fa-upload"></i> Upload<input type="file" accept="image/*" style="display:none" id="${uid}_file"></label>
         </div>
         <div id="${uid}_prev" style="margin-top:8px">${g.image ? `<img src="${BFS.asset(g.image)}" style="max-width:220px;border-radius:8px;border:1px solid #e4e7ec">` : `<span class="text-muted small">No image</span>`}</div>
       </div>
+      <div class="col-12"><label class="form-label">Design justification</label><textarea name="justification" class="form-control" rows="3" placeholder="Why this fence type, height and layout was chosen for this site…">${esc(g.justification||"")}</textarea></div>
+      <div class="col-12"><label class="form-label">Materials / solution</label><textarea name="materials" class="form-control" rows="3" placeholder="Posts, wire, gates, concrete, accessories and installation scope…">${esc(g.materials||"")}</textarea></div>
     </div>
-    <div class="d-flex gap-2 mt-3">
-      <button class="m-btn m-btn--primary" type="submit"><i class="fa-solid fa-check"></i> Save</button>
+    <div class="d-flex gap-2 mt-3 align-items-center">
+      <button class="m-btn m-btn--primary" type="submit"><i class="fa-solid fa-check"></i> Save project</button>
       <button class="m-btn m-btn--ghost" type="button" id="gcancel">Cancel</button>
+      <span class="text-muted small" id="gstatus"></span>
     </div>
   </form>`;
 }
 function bindGallery() {
   const ed = document.getElementById("editor");
   const openForm = g => { if (ed) { ed.innerHTML = galleryForm(g); ed.scrollIntoView({ behavior: "smooth", block: "start" }); } };
-  document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openForm(BFS.gallery().find(x => x.id === b.dataset.edit)));
+  const wireUpload = () => {
+    const upInp = ed && ed.querySelector('input[type="file"]');
+    if (!upInp) return;
+    upInp.onchange = async () => {
+      const file = upInp.files[0]; if (!file) return;
+      const statusEl = ed.querySelector("#gstatus");
+      if (statusEl) statusEl.textContent = "Uploading…";
+      try {
+        const path = await uploadProjectImage(file);
+        const imgInp = ed.querySelector('input[name="image"]');
+        if (imgInp) imgInp.value = path;
+        const prev = ed.querySelector('[id$="_prev"]');
+        if (prev) prev.innerHTML = `<img src="${BFS.asset(path)}" style="max-width:220px;border-radius:8px;border:1px solid #e4e7ec">`;
+        if (statusEl) statusEl.textContent = "Uploaded.";
+        notify("Image uploaded.");
+      } catch (err) { if (statusEl) statusEl.textContent = ""; alert("Upload failed: " + err.message); }
+    };
+  };
+  document.querySelectorAll("#app [data-edit]").forEach(b => b.onclick = () => { openForm(BFS.gallery().find(x => x.id === b.dataset.edit)); wireUpload(); });
   // Replace image: hidden file inputs with data-replace
   document.querySelectorAll('input[data-replace]').forEach(inp => inp.onchange = async () => {
     const file = inp.files[0]; if (!file) return;
     const id = inp.dataset.replace;
     try {
-      const fd = new FormData(); fd.append("file", file);
-      const res = await fetch("../api/upload.php", { method: "POST", body: fd });
-      const j = await res.json();
-      if (!j.ok) throw new Error(j.error || "upload failed");
+      const path = await uploadProjectImage(file);
       const item = BFS.gallery().find(x => x.id === id);
-      if (item) { item.image = j.path; BFS.saveGallery(item); notify("Image replaced."); render(); }
+      if (item) {
+        item.image = path; BFS.saveGallery(item);
+        const res = await BFS.syncNow().catch(() => ({ ok: false }));
+        notify(res && res.ok ? "Image replaced." : "Image replaced locally — sync failed, will retry.");
+        render();
+      }
     } catch (err) { alert("Replace failed: " + err.message); }
   });
   const add = document.getElementById("addG");
-  if (add) add.onclick = () => openForm(null);
+  if (add) add.onclick = () => { openForm(null); wireUpload(); };
   const cancel = document.getElementById("gcancel");
   if (cancel) cancel.onclick = () => { ed.innerHTML = ""; };
-  // upload handler (find the file input inside editor)
-  const upInp = ed.querySelector('input[type="file"]');
-  if (upInp) upInp.onchange = async () => {
-    const file = upInp.files[0]; if (!file) return;
-    try {
-      const fd = new FormData(); fd.append("file", file);
-      const res = await fetch("../api/upload.php", { method: "POST", body: fd });
-      const j = await res.json();
-      if (!j.ok) throw new Error(j.error || "upload failed");
-      const imgInp = ed.querySelector('input[name="image"]');
-      if (imgInp) imgInp.value = j.path;
-      const prev = ed.querySelector('[id$="_prev"]');
-      if (prev) prev.innerHTML = `<img src="${BFS.asset(j.path)}" style="max-width:220px;border-radius:8px;border:1px solid #e4e7ec">`;
-      notify("Image uploaded.");
-    } catch (err) { alert("Upload failed: " + err.message); }
-  };
   const form = document.getElementById("gform");
-  if (form) form.onsubmit = e => {
+  if (form) form.onsubmit = async e => {
     e.preventDefault();
     const fd = new FormData(form);
     const hid = form.querySelector('input[name="_id"]');
+    const statusEl = document.getElementById("gstatus");
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    if (statusEl) statusEl.textContent = "Saving…";
     const item = {
       id: hid && hid.value ? hid.value : undefined,
-      title: fd.get("title"), location: fd.get("location"), type: fd.get("type"),
-      year: Number(fd.get("year")) || new Date().getFullYear(), image: fd.get("image")
+      title: fd.get("title"), location: fd.get("location"),
+      areaType: fd.get("areaType"), fenceType: fd.get("fenceType"),
+      type: fd.get("areaType"), // legacy field mirrors area type for old readers
+      year: Number(fd.get("year")) || new Date().getFullYear(),
+      cost: Number(fd.get("cost")) || 0,
+      justification: fd.get("justification") || "",
+      materials: fd.get("materials") || "",
+      image: fd.get("image")
     };
-    BFS.saveGallery(item);
-    notify("Photo saved.");
-    render();
+    try {
+      BFS.saveGallery(item);
+      const res = await BFS.syncNow().catch(() => ({ ok: false }));
+      if (res && res.ok) { notify("Project saved."); render(); }
+      else { if (statusEl) statusEl.textContent = "Saved locally — sync failed, will retry."; submitBtn.disabled = false; }
+    } catch (err) { if (statusEl) statusEl.textContent = "Save failed: " + (err && err.message || err); submitBtn.disabled = false; }
   };
 }
 

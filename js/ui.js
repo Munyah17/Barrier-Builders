@@ -102,7 +102,7 @@
                 ${navLink("products","Products")}
                 ${navLink("calculator","Instant Quote")}
                 ${navLink("estimator","AI Estimator")}
-                ${navLink("gallery","Gallery")}
+                ${navLink("projects","Projects")}
                 ${navLink("track","Track Order")}
                 ${navLink("about","About")}
                 ${navLink("contact","Contact")}
@@ -119,7 +119,7 @@
               ${navLink("products","Products")}
               ${navLink("calculator","Instant Quote")}
               ${navLink("estimator","AI Estimator")}
-              ${navLink("gallery","Gallery")}
+              ${navLink("projects","Projects")}
               ${navLink("track","Track Order")}
               ${navLink("promotions","Promotions")}
               ${navLink("about","About")}
@@ -178,7 +178,7 @@
                   <h4>Company</h4>
                   <ul>
                     <li><a href="${BASE}about">About us</a></li>
-                    <li><a href="${BASE}gallery">Gallery</a></li>
+                    <li><a href="${BASE}projects">Projects</a></li>
                     <li><a href="${BASE}promotions">Promotions</a></li>
                     <li><a href="${BASE}track">Track an order</a></li>
                     <li><a href="${BASE}portal">Client login</a></li>

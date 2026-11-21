@@ -1,15 +1,23 @@
 <?php
-// Barrier Builders — image upload endpoint.
+// Barrier Builders — image upload endpoint (admin only).
 // Accepts multipart/form-data with field "file". Saves to assets/uploads/ and
 // returns { ok, path } where path is site-relative (e.g. "assets/uploads/abc.jpg").
 
+require __DIR__ . '/state_store.php';
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_set_cookie_params(['lifetime'=>0,'path'=>'/','httponly'=>true,'samesite'=>'Lax']);
+    session_start();
+}
+
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Cache-Control: no-store');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_encode(['ok'=>false,'error'=>'method not allowed']); exit; }
+
+// Admin session required — uploads write files to the site.
+if (!bfs_session_admin()) { http_response_code(401); echo json_encode(['ok'=>false,'error'=>'not authenticated']); exit; }
 
 if (empty($_FILES['file'])) { http_response_code(400); echo json_encode(['ok'=>false,'error'=>'no file']); exit; }
 
